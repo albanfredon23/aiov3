@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIO v3 – Dashboard</title>
+<style>
+  :root {
+    --bg: #0f1117; --card: #1a1d2e; --border: #2d3148;
+    --accent: #6366f1; --green: #22c55e; --red: #ef4444;
+    --yellow: #f59e0b; --text: #e2e8f0; --muted: #94a3b8;
+    --font: 'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; }
+  header { background: var(--card); border-bottom: 1px solid var(--border); padding: 16px 24px;
+           display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 18px; font-weight: 700; }
+  .badge { background: var(--accent); color: #fff; border-radius: 4px; padding: 2px 8px; font-size: 12px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+         box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+          gap: 16px; padding: 20px 24px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .card h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 8px; }
+  .metric { font-size: 28px; font-weight: 700; }
+  .metric.green { color: var(--green); }
+  .metric.red { color: var(--red); }
+  .metric.yellow { color: var(--yellow); }
+  .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .section { padding: 0 24px 20px; }
+  .section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em;
+                color: var(--muted); margin-bottom: 12px; padding-bottom: 8px;
+                border-bottom: 1px solid var(--border); }
+  .bar-wrap { margin-bottom: 10px; }
+  .bar-label { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
+  .bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .4s; }
+  .bar-fill.green { background: var(--green); }
+  .bar-fill.red { background: var(--red); }
+  .cb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+  .cb-item { background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+             padding: 10px 12px; display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .cb-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .log { background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+         padding: 12px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+  .log-entry { padding: 3px 0; border-bottom: 1px solid var(--border); color: var(--muted); }
+  .log-entry:last-child { border: none; }
+  .ts { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <div class="dot" id="status-dot"></div>
+  <h1>AIO v3 – Gödel Machine</h1>
+  <span class="badge">v3.0.0</span>
+  <span style="margin-left:auto;color:var(--muted);font-size:12px" id="last-update">Connexion…</span>
+</header>
+
+<div class="grid">
+  <div class="card">
+    <h3>Requêtes totales</h3>
+    <div class="metric green" id="m-requests">–</div>
+    <div class="sub" id="m-rps">–</div>
+  </div>
+  <div class="card">
+    <h3>Latence moyenne</h3>
+    <div class="metric" id="m-latency">–</div>
+    <div class="sub">ms / requête</div>
+  </div>
+  <div class="card">
+    <h3>Cache Hit Rate</h3>
+    <div class="metric green" id="m-cache">–</div>
+    <div class="sub" id="m-cache-tokens">0 tokens économisés</div>
+  </div>
+  <div class="card">
+    <h3>Tokens totaux</h3>
+    <div class="metric yellow" id="m-tokens">–</div>
+    <div class="sub">entrée + sortie</div>
+  </div>
+  <div class="card">
+    <h3>Redirections CB</h3>
+    <div class="metric" id="m-cb">–</div>
+    <div class="sub">circuit breaker</div>
+  </div>
+  <div class="card">
+    <h3>Uptime</h3>
+    <div class="metric green" id="m-uptime">–</div>
+    <div class="sub">secondes</div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Circuit Breakers</h2>
+  <div class="cb-grid" id="cb-grid">–</div>
+</div>
+
+<div class="section">
+  <h2>Budget Gödel 60/20/20</h2>
+  <div class="bar-wrap">
+    <div class="bar-label"><span>Orchestration</span><span id="b-orch">60%</span></div>
+    <div class="bar"><div class="bar-fill green" style="width:60%"></div></div>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-label"><span>Régression RLS</span><span id="b-rls">20%</span></div>
+    <div class="bar"><div class="bar-fill" style="width:20%"></div></div>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-label"><span>Vérification Gödel</span><span id="b-godel">20%</span></div>
+    <div class="bar"><div class="bar-fill red" style="width:20%"></div></div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Flux en temps réel</h2>
+  <div class="log" id="log"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => Number.isFinite(n) ? n.toLocaleString('fr-FR') : '–';
+let startTs = Date.now(), reqCount = 0, lastReqCount = 0, lastTs = Date.now();
+
+function addLog(msg) {
+  const log = $('log');
+  const ts = new Date().toISOString().substr(11,8);
+  const el = document.createElement('div');
+  el.className = 'log-entry';
+  el.innerHTML = `<span class="ts">${ts}</span> ${msg}`;
+  log.prepend(el);
+  while (log.children.length > 40) log.removeChild(log.lastChild);
+}
+
+function renderCB(states) {
+  if (!states || !Object.keys(states).length) { $('cb-grid').textContent = 'Aucun provider enregistré'; return; }
+  $('cb-grid').innerHTML = Object.entries(states).map(([p, s]) => {
+    const color = s === 'closed' ? '#22c55e' : s === 'open' ? '#ef4444' : '#f59e0b';
+    return `<div class="cb-item"><div class="cb-dot" style="background:${color}"></div>${p}<span style="margin-left:auto;color:${color};font-size:11px">${s}</span></div>`;
+  }).join('');
+}
+
+function update(data) {
+  $('last-update').textContent = 'Mis à jour: ' + new Date().toISOString().substr(11,8);
+  // Métriques client
+  const c = data.client || {};
+  const reqs = c.requests || 0;
+  $('m-requests').textContent = fmt(reqs);
+  const now = Date.now();
+  const rps = ((reqs - lastReqCount) / ((now - lastTs) / 1000)).toFixed(2);
+  $('m-rps').textContent = rps + ' req/s';
+  lastReqCount = reqs; lastTs = now;
+  $('m-latency').textContent = fmt(c.avg_latency_ms) + 'ms';
+  $('m-tokens').textContent = fmt((c.tokens_in || 0) + (c.tokens_out || 0));
+  $('m-cb').textContent = fmt(c.cb_redirects || 0);
+  // Cache
+  const cs = data.cache || (c.cache_stats || {});
+  const hr = ((cs.hit_rate || 0) * 100).toFixed(1);
+  $('m-cache').textContent = hr + '%';
+  $('m-cache-tokens').textContent = fmt(cs.tokens_saved || 0) + ' tokens économisés';
+  // Uptime
+  $('m-uptime').textContent = fmt(data.uptime_s || Math.floor((Date.now()-startTs)/1000));
+  // Circuit breakers
+  renderCB(data.circuit_breaker || {});
+  // Log
+  if (data.ts) addLog(`📡 Snapshot reçu | req=${reqs} | cache=${hr}% | latency=${fmt(c.avg_latency_ms)}ms`);
+}
+
+// WebSocket
+let ws;
+function connect() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws/telemetry`);
+  ws.onopen = () => { $('status-dot').style.background = '#22c55e'; addLog('✅ WebSocket connecté'); };
+  ws.onmessage = e => { try { update(JSON.parse(e.data)); } catch {} };
+  ws.onclose = () => { $('status-dot').style.background = '#ef4444'; addLog('⚠️ Reconnexion dans 3s…'); setTimeout(connect, 3000); };
+  ws.onerror = () => ws.close();
+}
+
+// Fallback SSE si WS indisponible
+function connectSSE() {
+  const es = new EventSource('/events/telemetry');
+  es.onmessage = e => { try { update(JSON.parse(e.data)); } catch {} };
+  es.onerror = () => { addLog('⚠️ SSE déconnecté'); setTimeout(connectSSE, 3000); };
+  addLog('📡 Connecté via SSE');
+}
+
+try { connect(); } catch { connectSSE(); }
+
+// Refresh dashboard toutes les 5s même sans event
+setInterval(async () => {
+  try {
+    const r = await fetch('/stats');
+    const d = await r.json();
+    update({client: d.client, cache: d.cache, ts: Date.now()/1000,
+            uptime_s: Math.floor((Date.now()-startTs)/1000)});
+  } catch {}
+}, 5000);
+</script>
+</body>
+</html>
