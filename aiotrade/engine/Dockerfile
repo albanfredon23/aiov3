@@ -1,4 +1,4 @@
-# Moteur AIOTrade (TAP + SCG + filtre χ²) exposé par FastAPI. Simulation uniquement.
+# Moteur AIOTrade (intégrité χ², Macro Gate, TAP, SCG, Kelly, XAI Ledger) : API FastAPI et exécutant de trading.
 FROM python:3.12-slim AS base
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -8,6 +8,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY aiotrade/ ./aiotrade/
+COPY data/ ./data/
+COPY reports/ ./reports/
 
 # Étape de test : docker build --target test ./engine
 FROM base AS test
@@ -18,7 +20,8 @@ RUN python -m pytest
 
 # Image d'exécution (cible par défaut)
 FROM base AS runtime
-RUN useradd --create-home --uid 10001 aiotrade
+RUN useradd --create-home --uid 10001 aiotrade \
+    && mkdir -p /data && chown aiotrade /data
 USER aiotrade
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=4s --start-period=10s --retries=3 \

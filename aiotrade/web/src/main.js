@@ -52,7 +52,7 @@ function countUp(el) {
     duration: 1.2,
     ease: 'power2.out',
     onUpdate: () => {
-      el.textContent = `${Math.round(obj.v)}${suffix}`;
+      el.textContent = `${Math.round(obj.v).toLocaleString('fr-FR')}${suffix}`;
     },
   });
 }

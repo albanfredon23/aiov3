@@ -3,3 +3,6 @@
 .pytest_cache
 *.egg-info
 .venv
+ledger/
+*.jsonl
+.env

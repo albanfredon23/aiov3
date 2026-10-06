@@ -3,7 +3,8 @@
 - ``chi2_sf`` : fonction de survie de la loi du χ² (p-value), via la fonction
   gamma incomplète régularisée (séries + fraction continue de Lentz).
 - ``historical_var`` / ``historical_cvar`` : VaR et Expected Shortfall historiques.
-- ``max_drawdown`` : drawdown maximal d'une courbe de valeur.
+- ``chi2_ppf`` : quantile de la loi du χ² (seuil critique), par bissection ;
+- ``max_drawdown``, ``sortino_ratio``, ``calmar_ratio`` : indicateurs de performance nets.
 """
 from __future__ import annotations
 
@@ -66,6 +67,25 @@ def chi2_sf(statistic: float, df: int) -> float:
     return max(0.0, min(1.0, _gamma_q_continued_fraction(a, x)))
 
 
+def chi2_ppf(probability: float, df: int) -> float:
+    """Quantile x tel que P(X <= x) = probability pour X ~ χ²(df). Ex. chi2_ppf(0.99, 4) = 13,28."""
+    if not 0.0 < probability < 1.0:
+        raise ValueError("probability doit être dans ]0, 1[")
+    target = 1.0 - probability
+    lo, hi = 0.0, max(1.0, float(df))
+    while chi2_sf(hi, df) > target:
+        hi *= 2.0
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        if chi2_sf(mid, df) > target:
+            lo = mid
+        else:
+            hi = mid
+        if hi - lo < 1e-10 * max(1.0, hi):
+            break
+    return 0.5 * (lo + hi)
+
+
 def portfolio_returns(returns: np.ndarray, weights: np.ndarray) -> np.ndarray:
     """Rendements d'un portefeuille à poids constants (le reste est en cash à 0 %)."""
     returns = np.asarray(returns, dtype=float)
@@ -101,3 +121,33 @@ def max_drawdown(values: np.ndarray) -> float:
         return 0.0
     peaks = np.maximum.accumulate(values)
     return float(np.max(1.0 - values / peaks))
+
+
+def sortino_ratio(returns: np.ndarray, periods_per_year: float) -> float:
+    """Ratio de Sortino annualisé (cible 0) sur des rendements nets par période."""
+    returns = np.asarray(returns, dtype=float)
+    if returns.size < 2:
+        return 0.0
+    downside = np.minimum(returns, 0.0)
+    dd = float(np.sqrt(np.mean(downside**2)))
+    if dd == 0.0:
+        return 0.0 if returns.mean() <= 0 else float("inf")
+    return float(returns.mean() / dd * np.sqrt(periods_per_year))
+
+
+def annualized_return(values: np.ndarray, periods_per_year: float) -> float:
+    """Rendement annualisé géométrique d'une courbe de valeur."""
+    values = np.asarray(values, dtype=float)
+    if values.size < 2 or values[0] <= 0 or values[-1] <= 0:
+        return 0.0
+    years = (values.size - 1) / periods_per_year
+    return float((values[-1] / values[0]) ** (1.0 / years) - 1.0)
+
+
+def calmar_ratio(values: np.ndarray, periods_per_year: float) -> float:
+    """Ratio de Calmar : rendement annualisé / drawdown maximal."""
+    mdd = max_drawdown(values)
+    ann = annualized_return(values, periods_per_year)
+    if mdd == 0.0:
+        return 0.0 if ann <= 0 else float("inf")
+    return float(ann / mdd)

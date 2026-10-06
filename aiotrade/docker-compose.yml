@@ -1,6 +1,11 @@
 # AIOTrade : démarrage complet en une commande
 #   docker compose up --build
 # puis ouvrir http://localhost:8088 (port modifiable via AIOTRADE_PORT).
+#
+# Exécutant de trading (désactivé par défaut, profil « trading ») :
+#   docker compose --profile trading up -d trader
+# Mode papier par défaut (données publiques Binance, aucun ordre). Voir .env.example
+# pour le testnet ; le live exige un double verrou explicite (README).
 name: aiotrade
 
 services:
@@ -27,3 +32,44 @@ services:
       - no-new-privileges:true
     ports:
       - "${AIOTRADE_PORT:-8088}:8080"
+
+  trader:
+    profiles: ["trading"]
+    build:
+      context: ./engine
+      target: runtime
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      disable: true
+    command:
+      - python
+      - -m
+      - aiotrade
+      - trade
+      - --broker
+      - ${AIOTRADE_BROKER:-paper}
+      - --symbol
+      - ${AIOTRADE_SYMBOL:-BTCUSDT}
+      - --ledger
+      - /data/decisions.jsonl
+      - --loop
+    environment:
+      # Les clés restent dans votre fichier .env local (jamais versionné) ou dans votre gestionnaire de secrets.
+      AIOTRADE_BINANCE_ENV: ${AIOTRADE_BINANCE_ENV:-testnet}
+      AIOTRADE_BINANCE_API_KEY: ${AIOTRADE_BINANCE_API_KEY:-}
+      AIOTRADE_BINANCE_API_SECRET: ${AIOTRADE_BINANCE_API_SECRET:-}
+      AIOTRADE_SEND_ORDERS: ${AIOTRADE_SEND_ORDERS:-0}
+      AIOTRADE_MAX_ORDER_NOTIONAL: ${AIOTRADE_MAX_ORDER_NOTIONAL:-1000}
+      AIOTRADE_LIVE_TRADING: ${AIOTRADE_LIVE_TRADING:-}
+      AIOTRADE_BINANCE_LIVE_API_KEY: ${AIOTRADE_BINANCE_LIVE_API_KEY:-}
+      AIOTRADE_BINANCE_LIVE_API_SECRET: ${AIOTRADE_BINANCE_LIVE_API_SECRET:-}
+    volumes:
+      - trader-ledger:/data
+
+volumes:
+  trader-ledger:

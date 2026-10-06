@@ -1,13 +1,17 @@
 /**
- * Graphe 3D AIOTrade (Three.js) : visualisation en motion design du flux
- * Marché → Moteur TAP → scénarios → Garde-fou SCG → Portefeuille, sous la
- * surveillance du filtre χ².
+ * Graphe 3D AIOTrade (Three.js) : le pipeline de décision en motion design.
  *
- * - Les « ordres » sont des particules ; une partie est rejetée par SCG
- *   (elles rougissent et tombent), le reste atteint le portefeuille.
- * - Le moteur TAP émet un faisceau de trajectoires vers chaque scénario.
- * - À l'étape χ², un choc fige le flux et une bulle de sécurité entoure le
- *   portefeuille.
+ * Marché → filtre d'intégrité χ² (+ Macro Gate) → prévision (essaim d'agents)
+ * → TAP (faisceau de trajectoires) → SCG (élagage) → Kelly fractionnaire →
+ * exécution maker / taker → décision LONG / SHORT / CASH, chaque décision
+ * étant scellée dans le registre XAI (chaîne de blocs SHA-256).
+ *
+ * - Les ordres candidats sont des particules ; une partie est élaguée par le
+ *   SCG (elles rougissent et tombent), le reste atteint la décision.
+ * - Le TAP projette un faisceau de trajectoires ; les trajectoires
+ *   inadmissibles sortent du cône et rougissent à l'étape SCG.
+ * - À l'étape intégrité, un choc gèle le flux et une bulle met la décision
+ *   en cash.
  *
  * Performance : pixel ratio adaptatif (cible 60 FPS), rendu suspendu hors
  * écran ou onglet masqué, particules réduites sur mobile.
@@ -20,46 +24,68 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 const C = {
   bg: 0x070b14,
   market: 0x60a5fa,
+  integrity: 0xa78bfa,
+  macro: 0xf472b6,
+  forecast: 0x38bdf8,
+  agent: 0x7dd3fc,
   tap: 0x2dd4bf,
-  scenario: 0x5eead4,
   scg: 0xfbbf24,
-  chi2: 0xa78bfa,
-  portfolio: 0x4ade80,
+  kelly: 0x93c5fd,
+  execution: 0x67e8f9,
+  decision: 0x4ade80,
+  ledger: 0xe2e8f0,
   reject: 0xff5a5a,
   edge: 0x334155,
 };
 
 export const NODES = [
-  { id: 'market', label: 'Marché', pos: [-6, 0, 0], color: C.market, size: 0.55, stage: 1, target: '#etape-marche',
-    desc: 'Prix, volumes et spreads en continu.' },
-  { id: 'tap', label: 'Moteur TAP', pos: [-3, 0, 0], color: C.tap, size: 0.65, stage: 2, target: '#etape-tap',
-    desc: 'Génère les scénarios et leurs faisceaux de trajectoires.' },
-  { id: 'trend', label: 'Tendance', pos: [0, 2.2, -0.8], color: C.scenario, size: 0.34, stage: 2, target: '#etape-tap',
-    desc: 'Scénario momentum ajusté du risque.' },
-  { id: 'meanrev', label: 'Retour à la moyenne', pos: [0, 0, 0.9], color: C.scenario, size: 0.34, stage: 2, target: '#etape-tap',
-    desc: "Scénario qui joue l'écart à la moyenne." },
-  { id: 'hedge', label: 'Couverture', pos: [0, -2.2, -0.4], color: C.scenario, size: 0.34, stage: 2, target: '#etape-tap',
-    desc: 'Scénario à variance minimale, exposition réduite.' },
-  { id: 'scg', label: 'Garde-fou SCG', pos: [3, 0, 0], color: C.scg, size: 0.9, stage: 3, target: '#etape-scg', kind: 'gate',
-    desc: 'Rejette tout ordre violant drawdown, VaR ou marge.' },
-  { id: 'chi2', label: 'Filtre χ²', pos: [0.6, -4.2, 0.6], color: C.chi2, size: 0.55, stage: 4, target: '#etape-chi2', kind: 'shield',
-    desc: 'Détecte les ruptures de marché et met en sécurité.' },
-  { id: 'portfolio', label: 'Portefeuille', pos: [6, 0, 0], color: C.portfolio, size: 0.7, stage: 5, target: '#etape-portefeuille',
-    desc: 'Allocation retenue, journalisée pour l’audit.' },
+  { id: 'market', label: 'Marché', pos: [-8, 0, 0], color: C.market, size: 0.55, stage: 1, target: '#etape-marche',
+    desc: 'Chandeliers OHLCV, spread et profondeur du carnet.' },
+  { id: 'integrity', label: 'Intégrité χ²', pos: [-5.6, 0, 0.3], color: C.integrity, size: 0.55, stage: 2, kind: 'shield',
+    target: '#etape-integrite', desc: 'Distance de Mahalanobis : gel et passage en cash si le flux est anormal.' },
+  { id: 'macro', label: 'Macro Gate', pos: [-5.6, 2.7, -0.6], color: C.macro, size: 0.5, stage: 2, kind: 'clock',
+    target: '#etape-integrite', desc: 'Veto calendaire : NFP, IPC, Fed, BCE.' },
+  { id: 'forecast', label: 'Prévision', pos: [-3.2, 0, 0], color: C.forecast, size: 0.55, stage: 3, target: '#etape-prevision',
+    desc: "Essaim d'agents pondérés en ligne, ou Kronos en option." },
+  { id: 'trend', label: 'Trend', pos: [-1.5, 2.0, -0.6], color: C.agent, size: 0.26, stage: 3, target: '#etape-prevision',
+    desc: 'Agent de suivi de tendance.' },
+  { id: 'meanrev', label: 'Mean-Reversion', pos: [-1.5, 0.7, 0.9], color: C.agent, size: 0.26, stage: 3, target: '#etape-prevision',
+    desc: 'Agent de retour à la moyenne.' },
+  { id: 'macroagent', label: 'Macro', pos: [-1.5, -0.7, 0.9], color: C.agent, size: 0.26, stage: 3, target: '#etape-prevision',
+    desc: 'Agent de dérive de fond.' },
+  { id: 'risk', label: 'Risque', pos: [-1.5, -2.0, -0.6], color: C.agent, size: 0.26, stage: 3, target: '#etape-prevision',
+    desc: 'Agent défensif à volatilité majorée.' },
+  { id: 'tap', label: 'TAP', pos: [0.6, 0, 0], color: C.tap, size: 0.6, stage: 4, target: '#etape-tap',
+    desc: '1 024 trajectoires multi-pas sur l’horizon de décision.' },
+  { id: 'scg', label: 'SCG', pos: [3.4, 0, 0], color: C.scg, size: 0.9, stage: 5, kind: 'gate', target: '#etape-scg',
+    desc: 'Élague les trajectoires qui violent le mandat ; seuil de 75 %.' },
+  { id: 'kelly', label: 'Kelly fractionnaire', pos: [5.1, 1.1, 0.3], color: C.kelly, size: 0.42, stage: 6, kind: 'cube',
+    target: '#etape-execution', desc: 'Taille λ·f*, plafonnée par le mandat.' },
+  { id: 'execution', label: 'Exécution', pos: [6.5, -1.0, 0.3], color: C.execution, size: 0.45, stage: 6, kind: 'cone',
+    target: '#etape-execution', desc: 'Impact Almgren-Chriss, ordres maker ou taker.' },
+  { id: 'decision', label: 'Décision', pos: [8.3, 0, 0], color: C.decision, size: 0.72, stage: 7, target: '#etape-decision',
+    desc: 'LONG, SHORT ou CASH, transmise au courtier.' },
+  { id: 'ledger', label: 'XAI Ledger', pos: [7.9, -3.4, 0.5], color: C.ledger, size: 0.3, stage: 7, kind: 'block',
+    target: '#etape-decision', desc: 'Registre d’audit immuable, chaîné par SHA-256.' },
 ];
 
 // Vues caméra par étape : [position, cible]
 const VIEWS = [
-  [[-0.6, 1.0, 23], [-0.6, -0.6, 0]],
-  [[-4.5, 1.2, 9], [-4.5, 0, 0]],
-  [[-1.5, 2.0, 10.5], [-1.5, 0, 0]],
-  [[3.2, 1.2, 10.5], [3.2, 0, 0]],
-  [[2.0, -0.8, 15], [2.0, -1.6, 0]],
-  [[5.0, 1.4, 9.5], [5.0, 0, 0]],
+  [[0.2, 0.6, 28], [0.2, -0.6, 0]],
+  [[-7.2, 1.2, 9], [-7.2, 0, 0]],
+  [[-5.4, 1.6, 10.5], [-5.4, 1.0, 0]],
+  [[-2.3, 0.8, 10.5], [-2.3, 0, 0]],
+  [[1.7, 1.2, 9.5], [1.8, 0, 0]],
+  [[3.0, 1.0, 9.5], [3.0, 0, 0]],
+  [[5.9, 0.6, 9.5], [5.9, 0, 0]],
+  [[6.4, -0.8, 12.5], [6.4, -1.5, 0]],
 ];
 
-const SCENARIO_IDS = ['trend', 'meanrev', 'hedge'];
-const SCG_T = 0.75; // paramètre de la courbe au passage du garde-fou
+const AGENT_IDS = ['trend', 'meanrev', 'macroagent', 'risk'];
+const ROUTE = ['market', 'integrity', 'forecast', null, 'tap', 'scg', 'kelly', 'execution', 'decision'];
+const SEGMENTS = ROUTE.length - 1;
+const T_INTEGRITY = 1 / SEGMENTS;
+const T_SCG = 5 / SEGMENTS;
 
 function vec(p) {
   return new THREE.Vector3(p[0], p[1], p[2]);
@@ -115,7 +141,7 @@ export function createGraph({ canvas, tooltip, reducedMotion = false, onContextL
   renderer.setClearColor(C.bg, 0);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(C.bg, 24, 48);
+  scene.fog = new THREE.Fog(C.bg, 30, 60);
 
   // Éclairage réaliste : environnement studio pré-filtré (PBR) + lumières douces.
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -132,7 +158,7 @@ export function createGraph({ canvas, tooltip, reducedMotion = false, onContextL
   key.position.set(4, 8, 6);
   scene.add(key);
 
-  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 80);
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 90);
   const camPos = vec(VIEWS[0][0]);
   const camLook = vec(VIEWS[0][1]);
   camera.position.copy(camPos);
@@ -144,10 +170,17 @@ export function createGraph({ canvas, tooltip, reducedMotion = false, onContextL
   const nodeMeshes = new Map();
   const labels = [];
   const sphereGeo = new THREE.IcosahedronGeometry(1, 4);
+  const geometries = {
+    gate: () => new THREE.TorusGeometry(1, 0.12, 24, 96),
+    shield: () => new THREE.OctahedronGeometry(1, 0),
+    clock: () => new THREE.CylinderGeometry(1, 1, 0.22, 48),
+    cube: () => new THREE.BoxGeometry(1.3, 1.3, 1.3),
+    cone: () => new THREE.ConeGeometry(0.9, 1.7, 32),
+    block: () => new THREE.BoxGeometry(1.5, 1.5, 1.5),
+  };
+  const hands = [];
   NODES.forEach((node) => {
-    let geometry = sphereGeo;
-    if (node.kind === 'gate') geometry = new THREE.TorusGeometry(1, 0.12, 24, 96);
-    if (node.kind === 'shield') geometry = new THREE.OctahedronGeometry(1, 0);
+    const geometry = node.kind ? geometries[node.kind]() : sphereGeo;
     const material = new THREE.MeshStandardMaterial({
       color: node.color,
       emissive: node.color,
@@ -160,105 +193,147 @@ export function createGraph({ canvas, tooltip, reducedMotion = false, onContextL
     mesh.position.copy(vec(node.pos));
     mesh.scale.setScalar(node.size);
     if (node.kind === 'gate') mesh.rotation.y = Math.PI / 2;
+    if (node.kind === 'clock') mesh.rotation.x = Math.PI / 2;
+    if (node.kind === 'cone') mesh.rotation.z = -Math.PI / 2;
+    if (node.kind === 'cube') mesh.rotation.set(0.5, 0.6, 0);
+    if (node.kind === 'clock') {
+      // Aiguille du calendrier macro : tourne en continu, s'emballe pendant un blackout.
+      const hand = new THREE.Mesh(
+        new THREE.BoxGeometry(0.1, 0.12, 0.8),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.6 }),
+      );
+      hand.position.set(0, 0.16, -0.32);
+      const pivot = new THREE.Group();
+      pivot.add(hand);
+      mesh.add(pivot);
+      hands.push(pivot);
+    }
     mesh.userData = { node, baseScale: node.size, emissive: 0.35, hover: 0, flash: 0 };
     root.add(mesh);
     nodeMeshes.set(node.id, mesh);
 
     const { texture, aspect } = makeLabelTexture(node.label);
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false }));
-    const h = isSmall ? 0.42 : 0.36;
+    const h = isSmall ? 0.42 : node.size < 0.3 ? 0.3 : 0.36;
     sprite.scale.set(h * aspect, h, 1);
-    sprite.position.copy(vec(node.pos)).add(new THREE.Vector3(0, node.size + 0.45, 0));
+    const above = node.id === 'risk' || node.id === 'ledger' ? -(node.size + 0.42) : node.size + 0.45;
+    sprite.position.copy(vec(node.pos)).add(new THREE.Vector3(0, above, 0));
     sprite.renderOrder = 10;
     sprite.userData = { node };
     root.add(sprite);
     labels.push(sprite);
   });
+  const posOf = (id) => vec(NODES.find((n) => n.id === id).pos);
 
-  // Anneau intérieur du garde-fou (effet de porte filtrante).
+  // Disque intérieur du garde-fou (effet de porte filtrante).
   const gateDisc = new THREE.Mesh(
     new THREE.CircleGeometry(0.85, 48),
     new THREE.MeshBasicMaterial({ color: C.scg, transparent: true, opacity: 0.06, side: THREE.DoubleSide, depthWrite: false }),
   );
-  gateDisc.position.copy(vec(NODES[5].pos));
+  gateDisc.position.copy(posOf('scg'));
   gateDisc.rotation.y = Math.PI / 2;
   root.add(gateDisc);
 
-  // Bulle de sécurité autour du portefeuille (mode sécurité χ²).
+  // Bulle de mise en cash autour de la décision (gel d'intégrité).
   const bubble = new THREE.Mesh(
     new THREE.IcosahedronGeometry(1.5, 3),
     new THREE.MeshStandardMaterial({
-      color: C.chi2, emissive: C.chi2, emissiveIntensity: 0.4, transparent: true, opacity: 0,
+      color: C.integrity, emissive: C.integrity, emissiveIntensity: 0.4, transparent: true, opacity: 0,
       wireframe: true, depthWrite: false,
     }),
   );
-  bubble.position.copy(vec(NODES[7].pos));
+  bubble.position.copy(posOf('decision'));
   root.add(bubble);
 
   /* ------------------------------------------------------------ liaisons */
-  const posOf = (id) => vec(NODES.find((n) => n.id === id).pos);
   const edgeMaterial = new THREE.MeshStandardMaterial({ color: C.edge, emissive: 0x1e293b, emissiveIntensity: 0.6, roughness: 0.6 });
   const tube = (points, radius = 0.025) => {
     const curve = new THREE.CatmullRomCurve3(points);
-    const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, radius, 8, false), edgeMaterial);
-    root.add(mesh);
+    root.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 48, radius, 8, false), edgeMaterial));
     return curve;
   };
-  tube([posOf('market'), posOf('tap')]);
-  SCENARIO_IDS.forEach((id) => {
-    const mid = posOf(id).clone().lerp(posOf('scg'), 0.5).add(new THREE.Vector3(0, 0, 0.2));
-    tube([posOf(id), mid, posOf('scg')]);
+  tube([posOf('market'), posOf('integrity'), posOf('forecast')]);
+  AGENT_IDS.forEach((id) => {
+    tube([posOf('forecast'), posOf(id)], 0.018);
+    tube([posOf(id), posOf('tap')], 0.018);
   });
-  tube([posOf('scg'), posOf('portfolio')]);
+  tube([posOf('scg'), posOf('kelly'), posOf('execution'), posOf('decision')]);
 
-  // Liaison de surveillance χ² : marché → filtre → portefeuille.
-  const chiCurve = new THREE.CatmullRomCurve3([
-    posOf('market'),
-    new THREE.Vector3(-4, -3.2, 0.4),
-    posOf('chi2'),
-    new THREE.Vector3(4.6, -3.0, 0.4),
-    posOf('portfolio'),
-  ]);
-  const chiMaterial = new THREE.LineDashedMaterial({ color: C.chi2, dashSize: 0.18, gapSize: 0.14, transparent: true, opacity: 0.45 });
-  const chiLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(chiCurve.getPoints(160)), chiMaterial);
-  chiLine.computeLineDistances();
-  root.add(chiLine);
+  // Liaisons de contrôle en pointillés : gel d'intégrité, veto macro, écriture au registre.
+  const dashed = (points, color, opacity) => {
+    const curve = new THREE.CatmullRomCurve3(points);
+    const material = new THREE.LineDashedMaterial({ color, dashSize: 0.18, gapSize: 0.14, transparent: true, opacity });
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(160)), material);
+    line.computeLineDistances();
+    root.add(line);
+    return { curve, material };
+  };
+  const freezeLink = dashed(
+    [posOf('integrity'), new THREE.Vector3(-3, -3.0, 0.5), new THREE.Vector3(3.5, -2.4, 0.5), posOf('decision')],
+    C.integrity, 0.4,
+  );
+  const macroLink = dashed(
+    [posOf('macro'), new THREE.Vector3(-1, 3.8, -0.4), new THREE.Vector3(5.5, 3.0, -0.2), posOf('decision')],
+    C.macro, 0.35,
+  );
+
+  /* -------------------------------------------- registre XAI : chaîne de blocs */
+  const blockGeo = new THREE.BoxGeometry(0.34, 0.34, 0.34);
+  const chain = [];
+  const CHAIN = 6;
+  for (let i = 0; i < CHAIN; i += 1) {
+    const p = new THREE.Vector3(2.2 + i * 0.95, -3.4, 0.5);
+    const block = new THREE.Mesh(
+      blockGeo,
+      new THREE.MeshStandardMaterial({ color: C.ledger, emissive: C.ledger, emissiveIntensity: 0.15, metalness: 0.5, roughness: 0.3 }),
+    );
+    block.position.copy(p);
+    block.rotation.set(0.4, 0.5, 0);
+    root.add(block);
+    chain.push(block);
+    if (i > 0) tube([chain[i - 1].position, p], 0.012);
+  }
+  tube([chain[CHAIN - 1].position, posOf('ledger')], 0.012);
+  const ledgerLinks = [
+    dashed([posOf('scg'), new THREE.Vector3(3.2, -1.8, 0.4), chain[1].position], C.ledger, 0.18),
+    dashed([posOf('decision'), new THREE.Vector3(8.4, -1.9, 0.4), posOf('ledger')], C.ledger, 0.18),
+  ];
 
   /* ----------------------------------------- faisceau de trajectoires TAP */
   const rand = mulberry32(44);
-  const bundle = [];
-  const bundleMaterial = new THREE.LineBasicMaterial({ color: C.tap, transparent: true, opacity: 0.32, depthWrite: false, blending: THREE.AdditiveBlending });
-  const linesPerScenario = isSmall ? 8 : 14;
-  SCENARIO_IDS.forEach((id) => {
-    const start = posOf('tap');
-    const end = posOf(id);
-    for (let i = 0; i < linesPerScenario; i += 1) {
-      const pts = [];
-      const spread = 0.9;
-      for (let k = 0; k <= 6; k += 1) {
-        const t = k / 6;
-        const p = start.clone().lerp(end, t);
-        const env = Math.sin(Math.PI * t); // l'incertitude s'ouvre puis converge
-        p.x += 0;
-        p.y += (rand() - 0.5) * spread * env;
-        p.z += (rand() - 0.5) * spread * env;
-        pts.push(p);
-      }
-      const curve = new THREE.CatmullRomCurve3(pts);
-      const geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(40));
-      const line = new THREE.Line(geometry, bundleMaterial);
-      line.userData.count = 41;
-      line.userData.delay = rand() * 0.6;
-      root.add(line);
-      bundle.push(line);
+  const admissible = [];
+  const pruned = [];
+  const admissibleMaterial = new THREE.LineBasicMaterial({ color: C.tap, transparent: true, opacity: 0.32, depthWrite: false, blending: THREE.AdditiveBlending });
+  const prunedMaterial = new THREE.LineBasicMaterial({ color: C.tap, transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending });
+  const nLines = isSmall ? 18 : 34;
+  const start = posOf('tap');
+  const end = posOf('scg');
+  for (let i = 0; i < nLines; i += 1) {
+    const isPruned = i % 4 === 3; // environ un quart des trajectoires sort du cône admissible
+    const angle = rand() * Math.PI * 2;
+    const radius = isPruned ? 1.1 + rand() * 0.9 : rand() * 0.62;
+    const pts = [];
+    for (let k = 0; k <= 8; k += 1) {
+      const t = k / 8;
+      const p = start.clone().lerp(end, t);
+      const spread = radius * Math.pow(t, 1.25); // l'incertitude s'ouvre avec l'horizon
+      const wobble = (rand() - 0.5) * 0.18 * Math.sin(Math.PI * t);
+      p.y += Math.sin(angle) * spread + wobble;
+      p.z += Math.cos(angle) * spread + wobble;
+      pts.push(p);
     }
-  });
+    const curve = new THREE.CatmullRomCurve3(pts);
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(40)), isPruned ? prunedMaterial : admissibleMaterial);
+    line.userData.count = 41;
+    line.userData.delay = rand() * 0.6;
+    root.add(line);
+    (isPruned ? pruned : admissible).push(line);
+  }
+  const bundle = admissible.concat(pruned);
 
   /* ------------------------------------------------------ particules (ordres) */
   const dotTexture = makeDotTexture();
-  const routeCurves = SCENARIO_IDS.map((id) =>
-    new THREE.CatmullRomCurve3([posOf('market'), posOf('tap'), posOf(id), posOf('scg'), posOf('portfolio')]),
-  );
+  const routeCurves = AGENT_IDS.map((agent) => new THREE.CatmullRomCurve3(ROUTE.map((id) => posOf(id ?? agent))));
   const COUNT = isSmall ? 110 : 220;
   const particles = Array.from({ length: COUNT }, () => ({ alive: false }));
   const pGeometry = new THREE.BufferGeometry();
@@ -275,26 +350,22 @@ export function createGraph({ canvas, tooltip, reducedMotion = false, onContextL
   points.frustumCulled = false;
   root.add(points);
 
-  // Capteurs du filtre χ² sur la liaison de surveillance.
+  // Capteurs du filtre d'intégrité sur la liaison de gel.
   const SENSORS = isSmall ? 18 : 32;
   const sGeometry = new THREE.BufferGeometry();
   const sPositions = new Float32Array(SENSORS * 3);
   sGeometry.setAttribute('position', new THREE.BufferAttribute(sPositions, 3));
   const sMaterial = new THREE.PointsMaterial({
-    size: 0.12, map: dotTexture, color: C.chi2, transparent: true, opacity: 0.8,
+    size: 0.12, map: dotTexture, color: C.integrity, transparent: true, opacity: 0.8,
     depthWrite: false, blending: THREE.AdditiveBlending,
   });
   const sensors = new THREE.Points(sGeometry, sMaterial);
   sensors.frustumCulled = false;
   root.add(sensors);
   const sensorPhase = Array.from({ length: SENSORS }, (_, i) => i / SENSORS);
-  sensorPhase.forEach((ph, i) => {
-    const p = chiCurve.getPoint(ph);
-    sPositions.set([p.x, p.y, p.z], i * 3);
-  });
 
   const colGood = new THREE.Color(C.tap);
-  const colOut = new THREE.Color(C.portfolio);
+  const colOut = new THREE.Color(C.decision);
   const colReject = new THREE.Color(C.reject);
   const tmp = new THREE.Vector3();
   const tmpColor = new THREE.Color();
@@ -304,9 +375,8 @@ export function createGraph({ canvas, tooltip, reducedMotion = false, onContextL
     p.alive = true;
     p.route = Math.floor(rand() * routeCurves.length);
     p.t = 0;
-    p.speed = 0.09 + rand() * 0.06;
-    p.rejectChance = state.stage === 3 ? 0.45 : 0.25;
-    p.rejected = rand() < p.rejectChance;
+    p.speed = 0.075 + rand() * 0.05;
+    p.rejected = rand() < (state.stage === 5 ? 0.4 : 0.22);
     p.falling = false;
     p.fade = 1;
     p.jitter = new THREE.Vector3((rand() - 0.5) * 0.25, (rand() - 0.5) * 0.25, (rand() - 0.5) * 0.25);
@@ -321,14 +391,16 @@ export function createGraph({ canvas, tooltip, reducedMotion = false, onContextL
     time: 0,
     stageTime: 0,
     spawnAcc: 0,
-    shock: 0, // 0..1, intensité du mode sécurité
+    shock: 0, // 0..1, intensité du gel d'intégrité
+    blackout: 0, // 0..1, veto macro
+    ledgerFlash: 0,
     pointer: new THREE.Vector2(0, 0),
     parallax: new THREE.Vector2(0, 0),
     hovered: null,
   };
 
   function updateParticles(dt) {
-    const spawnRate = state.stage === 4 ? 0 : isSmall ? 18 : 34; // ordres / seconde
+    const spawnRate = state.shock > 0.5 ? 0 : isSmall ? 18 : 34; // ordres / seconde
     state.spawnAcc += spawnRate * dt;
     for (const p of particles) {
       if (state.spawnAcc < 1) break;
@@ -353,23 +425,24 @@ export function createGraph({ canvas, tooltip, reducedMotion = false, onContextL
         tmpColor.copy(colReject).multiplyScalar(Math.max(p.fade, 0));
         if (p.fade <= 0) p.alive = false;
       } else {
-        // En mode sécurité, les ordres en vol avant SCG sont annulés (fondu).
-        if (state.shock > 0.5 && p.t < SCG_T) {
+        // Gel d'intégrité : les ordres pas encore passés par le SCG sont annulés (fondu).
+        if (state.shock > 0.5 && p.t < T_SCG) {
           p.fade -= dt * 2;
           if (p.fade <= 0) p.alive = false;
         }
         p.t += p.speed * dt;
-        if (p.rejected && p.t >= SCG_T) {
+        if (p.rejected && p.t >= T_SCG) {
           p.falling = true;
           p.vel.set((rand() - 0.2) * 0.8, 0.6 + rand() * 0.6, (rand() - 0.5) * 1.2);
           flash = 1;
         }
         if (p.t >= 1) {
           p.alive = false;
+          state.ledgerFlash = 1; // chaque décision est scellée dans le registre
           return;
         }
         routeCurves[p.route].getPoint(p.t, tmp).add(p.jitter);
-        const k = THREE.MathUtils.smoothstep(p.t, SCG_T, 1);
+        const k = THREE.MathUtils.smoothstep(p.t, T_SCG, 1);
         tmpColor.copy(colGood).lerp(colOut, k).multiplyScalar(Math.max(p.fade, 0));
       }
       pPositions[o] = tmp.x;
@@ -383,11 +456,10 @@ export function createGraph({ canvas, tooltip, reducedMotion = false, onContextL
     pGeometry.attributes.color.needsUpdate = true;
     if (flash) nodeMeshes.get('scg').userData.flash = 1;
 
-    // Capteurs χ²
     const sensorSpeed = 0.05 + state.shock * 0.12;
     sensorPhase.forEach((ph, i) => {
       sensorPhase[i] = (ph + sensorSpeed * dt) % 1;
-      chiCurve.getPoint(sensorPhase[i], tmp);
+      freezeLink.curve.getPoint(sensorPhase[i], tmp);
       sPositions[i * 3] = tmp.x;
       sPositions[i * 3 + 1] = tmp.y;
       sPositions[i * 3 + 2] = tmp.z;
@@ -395,11 +467,13 @@ export function createGraph({ canvas, tooltip, reducedMotion = false, onContextL
     sGeometry.attributes.position.needsUpdate = true;
   }
 
+  const isFocused = (node, s) => s === 0 || node.stage === s || (s === 2 && node.id === 'market') || (s === 2 && node.id === 'decision');
+
   function updateNodes(dt) {
     const s = state.stage;
     nodeMeshes.forEach((mesh) => {
       const { node } = mesh.userData;
-      const focused = s === 0 || node.stage === s || (s === 4 && node.id === 'portfolio') || (s === 4 && node.id === 'market');
+      const focused = isFocused(node, s);
       const targetEmissive = (s === 0 ? 0.75 : focused ? 1.3 : 0.12) + mesh.userData.hover * 0.8;
       mesh.userData.emissive += (targetEmissive - mesh.userData.emissive) * Math.min(1, dt * 4);
       let emissive = mesh.userData.emissive;
@@ -408,6 +482,7 @@ export function createGraph({ canvas, tooltip, reducedMotion = false, onContextL
         mesh.userData.flash = Math.max(0, mesh.userData.flash - dt * 3);
         emissive += mesh.userData.flash * 0.9;
       }
+      if (node.id === 'ledger') emissive += state.ledgerFlash * 0.8;
       if (node.id === 'market' && state.shock > 0.01) {
         const pulse = 0.5 + 0.5 * Math.sin(state.time * 9);
         shockColor.lerp(colReject, state.shock * pulse);
@@ -420,32 +495,54 @@ export function createGraph({ canvas, tooltip, reducedMotion = false, onContextL
       mesh.scale.setScalar(scale);
       if (node.kind === 'gate') mesh.rotation.x += dt * 0.25;
       if (node.kind === 'shield') mesh.rotation.y += dt * (0.6 + state.shock * 2.5);
+      if (node.kind === 'cube' || node.kind === 'block') mesh.rotation.y += dt * 0.35;
       mesh.userData.hover += ((state.hovered === mesh ? 1 : 0) - mesh.userData.hover) * Math.min(1, dt * 10);
     });
+    hands.forEach((h) => {
+      h.rotation.y -= dt * (0.5 + state.blackout * 4);
+    });
     labels.forEach((sprite) => {
-      const { node } = sprite.userData;
-      const focused = s === 0 || node.stage === s || (s === 4 && ['portfolio', 'market'].includes(node.id));
-      const target = focused ? 1 : 0.35;
+      const target = isFocused(sprite.userData.node, s) ? 1 : 0.35;
       sprite.material.opacity += (target - sprite.material.opacity) * Math.min(1, dt * 5);
     });
 
-    // Faisceau TAP : se dessine à l'étape 2, reste visible ensuite.
+    // Faisceau TAP : se dessine à l'étape 4 ; les trajectoires inadmissibles rougissent à l'étape SCG.
     bundle.forEach((line) => {
-      const local = s === 2 ? THREE.MathUtils.clamp((state.stageTime - line.userData.delay) / 1.2, 0, 1) : 1;
+      const local = s === 4 ? THREE.MathUtils.clamp((state.stageTime - line.userData.delay) / 1.2, 0, 1) : 1;
       line.geometry.setDrawRange(0, Math.max(2, Math.floor(line.userData.count * local)));
     });
-    const bundleTarget = s === 2 ? 0.55 : s === 0 ? 0.28 : s === 4 ? 0.06 : 0.16;
-    bundleMaterial.opacity += (bundleTarget - bundleMaterial.opacity) * Math.min(1, dt * 4);
+    const bundleTarget = s === 4 || s === 5 ? 0.55 : s === 0 ? 0.28 : 0.14;
+    admissibleMaterial.opacity += (bundleTarget - admissibleMaterial.opacity) * Math.min(1, dt * 4);
+    const prunedTarget = s === 5 ? 0.75 : bundleTarget * 0.7;
+    prunedMaterial.opacity += (prunedTarget - prunedMaterial.opacity) * Math.min(1, dt * 4);
+    const redness = s === 5 ? Math.min(1, state.stageTime / 1.2) : 0;
+    prunedMaterial.color.setHex(C.tap).lerp(colReject, redness);
 
-    // Mode sécurité χ²
-    const shockTarget = s === 4 ? 1 : 0;
+    // Gel d'intégrité (étape 2) : choc périodique, retour au nominal entre deux chocs.
+    const cycle = reducedMotion ? 1 : (state.stageTime % 6) > 2.6 ? 1 : 0;
+    const shockTarget = s === 2 ? cycle : 0;
     state.shock += (shockTarget - state.shock) * Math.min(1, dt * 3);
+    state.blackout += ((s === 2 ? 1 : 0) - state.blackout) * Math.min(1, dt * 2);
     bubble.material.opacity = state.shock * 0.35;
     bubble.rotation.y += dt * 0.3;
     bubble.scale.setScalar(1 + Math.sin(state.time * 2.2) * 0.03 * state.shock);
-    chiMaterial.opacity = 0.35 + state.shock * 0.5;
+    freezeLink.material.opacity = 0.3 + state.shock * 0.6;
+    macroLink.material.opacity = 0.25 + state.blackout * 0.5;
     sMaterial.opacity = 0.55 + state.shock * 0.45;
     gateDisc.material.opacity = 0.05 + nodeMeshes.get('scg').userData.flash * 0.25;
+
+    // Registre : une impulsion parcourt la chaîne de blocs, le dernier s'illumine à chaque décision.
+    state.ledgerFlash = Math.max(0, state.ledgerFlash - dt * 2.5);
+    const ledgerFocus = s === 7 ? 1 : s === 0 ? 0.5 : 0.15;
+    const head = (state.time * 1.5) % CHAIN;
+    chain.forEach((block, i) => {
+      const pulse = Math.max(0, 1 - Math.abs(head - i));
+      block.material.emissiveIntensity = 0.12 + ledgerFocus * (0.35 + pulse * 0.9);
+      block.rotation.y += dt * 0.3;
+    });
+    ledgerLinks.forEach((l) => {
+      l.material.opacity = 0.12 + ledgerFocus * 0.4;
+    });
   }
 
   function updateCamera(dt, immediate = false) {
@@ -603,7 +700,8 @@ export function createGraph({ canvas, tooltip, reducedMotion = false, onContextL
     state.stage = next;
     state.stageTime = 0;
     if (reducedMotion) {
-      state.shock = next === 4 ? 1 : 0;
+      state.shock = next === 2 ? 1 : 0;
+      state.blackout = state.shock;
       bubble.material.opacity = state.shock * 0.35;
       renderOnce();
     }

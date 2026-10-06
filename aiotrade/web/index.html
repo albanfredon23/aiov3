@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AIOTrade · Co-pilote de gestion des risques pour le trading algorithmique</title>
+    <title>AIOTrade · Garde-fou neuro-symbolique pour le trading algorithmique</title>
     <meta
       name="description"
-      content="AIOTrade ne prédit pas le marché : il génère un faisceau de trajectoires d'allocation, élimine tout ordre qui violerait drawdown, VaR ou marge, et met le portefeuille en sécurité face aux flash-crashes."
+      content="AIOTrade n'est pas un bot prédictif : il teste 1 024 trajectoires par décision, élague celles qui violent votre mandat de risque, dimensionne au Kelly fractionnaire et scelle chaque décision dans un registre d'audit chaîné SHA-256."
     />
     <link rel="canonical" href="https://www.aiotrade.example/" />
     <meta name="theme-color" content="#070b14" />
@@ -17,16 +17,16 @@
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="fr_FR" />
     <meta property="og:site_name" content="AIOTrade" />
-    <meta property="og:title" content="AIOTrade · Ne prédisez pas le marché. Encadrez-le." />
+    <meta property="og:title" content="AIOTrade · La trajectoire admissible est l'objectif" />
     <meta
       property="og:description"
-      content="Moteur TAP, garde-fou SCG et filtre χ² : le co-pilote de conformité et de surveillance des desks de prop trading et des gérants."
+      content="Filtre d'intégrité χ², Macro Gate, faisceau TAP, garde-fou SCG, Kelly fractionnaire et registre XAI : la garantie algorithmique de non-violation du capital pour les desks de prop trading."
     />
     <meta property="og:url" content="https://www.aiotrade.example/" />
     <meta property="og:image" content="https://www.aiotrade.example/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Graphe 3D du flux de décision AIOTrade : marché, moteur TAP, scénarios, garde-fou SCG, filtre χ², portefeuille." />
+    <meta property="og:image:alt" content="Graphe 3D du pipeline AIOTrade : marché, filtre d'intégrité, Macro Gate, agents de prévision, faisceau TAP, garde-fou SCG, Kelly, exécution, décision et registre XAI." />
     <meta name="twitter:card" content="summary_large_image" />
 
     <!--
@@ -61,12 +61,29 @@
             "name": "AIOTrade",
             "applicationCategory": "FinanceApplication",
             "operatingSystem": "Linux, Docker",
-            "description": "Co-pilote de gestion des risques pour le trading algorithmique : moteur de scénarios TAP, garde-fou financier SCG (drawdown, VaR, marge) et filtre χ² de rupture de marché.",
+            "description": "Garde-fou neuro-symbolique pour le trading algorithmique : filtre d'intégrité χ² / Mahalanobis, Macro Gate calendaire, faisceau de trajectoires TAP, élagage SCG sous mandat de risque, Kelly fractionnaire, exécution Almgren-Chriss et registre d'audit XAI chaîné SHA-256.",
             "featureList": [
-              "Moteur TAP : scénarios tendance, retour à la moyenne, couverture",
-              "Garde-fou SCG : drawdown maximal, budget de VaR, marge disponible",
-              "Filtre χ² : mise en sécurité face aux flash-crashes et décrochages de liquidité",
-              "Journal d'audit de chaque décision"
+              "Filtre d'intégrité χ² / Mahalanobis : gel et passage en cash sur flux anormal",
+              "Macro Gate : veto calendaire autour des annonces NFP, IPC, Fed et BCE",
+              "TAP : 1 024 trajectoires multi-pas par décision",
+              "SCG : élagage par drawdown, perte par trade, levier, VaR et CVaR ; seuil d'admissibilité de 75 %",
+              "Kelly fractionnaire plafonné par le mandat",
+              "Exécution Almgren-Chriss, ordres maker ou taker",
+              "XAI Ledger : un enregistrement JSON par décision, chaîné SHA-256"
+            ],
+            "offers": [
+              {
+                "@type": "Offer",
+                "name": "SaaS par trader",
+                "priceCurrency": "EUR",
+                "priceSpecification": { "@type": "UnitPriceSpecification", "minPrice": 50, "maxPrice": 200, "priceCurrency": "EUR", "unitText": "mois" }
+              },
+              {
+                "@type": "Offer",
+                "name": "Licence API / FIX par desk",
+                "priceCurrency": "EUR",
+                "priceSpecification": { "@type": "UnitPriceSpecification", "minPrice": 5000, "maxPrice": 15000, "priceCurrency": "EUR", "unitText": "an" }
+              }
             ],
             "publisher": { "@id": "https://www.aiotrade.example/#organisation" }
           },
@@ -75,10 +92,10 @@
             "mainEntity": [
               {
                 "@type": "Question",
-                "name": "AIOTrade prédit-il les prix ?",
+                "name": "AIOTrade est-il un bot qui prédit les prix ?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Non. AIOTrade génère plusieurs trajectoires d'allocation possibles et ne retient que celles qui respectent vos contraintes de risque. Il encadre la décision au lieu de parier sur une prévision."
+                  "text": "Non. La prévision n'est qu'une entrée : AIOTrade génère un faisceau de trajectoires, élimine celles qui violeraient votre mandat de risque et ne s'expose que si au moins 75 % des trajectoires restent admissibles. Sinon, il reste en cash."
                 }
               },
               {
@@ -86,15 +103,23 @@
                 "name": "AIOTrade passe-t-il des ordres réels ?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Non, la version actuelle fonctionne en simulation et en co-pilotage : elle vérifie et propose, la décision d'exécution reste humaine ou relève de votre infrastructure."
+                  "text": "Par défaut, non : mode papier sur données publiques, puis Binance Spot testnet. Le passage en réel n'est possible que sur votre infrastructure, avec des clés dédiées, un double verrou explicite et un plafond par ordre."
                 }
               },
               {
                 "@type": "Question",
-                "name": "Comment se déploie AIOTrade ?",
+                "name": "Quels résultats AIOTrade obtient-il ?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Par conteneurs Docker : une commande docker compose up démarre l'API et l'interface, sur votre propre infrastructure."
+                  "text": "Sur un walk-forward de 12 mois hors échantillon en données synthétiques, AIOTrade a limité son drawdown maximal à 0,3 % contre 30,4 % pour une stratégie prédictive non contrainte, en restant en cash l'essentiel du temps faute d'avantage net de frais. Les objectifs de Sortino et de Calmar ne sont pas atteints sur ces données et doivent être mesurés sur données réelles."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Que contient le registre XAI ?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Un enregistrement JSON par décision : distance d² et seuil χ², état du Macro Gate, nombre de trajectoires testées, rejets du SCG par contrainte, ratio d'admissibilité, allocation retenue, contraintes actives et empreinte SHA-256 de l'enregistrement précédent."
                 }
               }
             ]
@@ -117,26 +142,37 @@
           </linearGradient>
         </defs>
         <g class="fb-edges" fill="none" stroke-linecap="round">
-          <path class="fb-edge fb-edge--market" d="M110 300 H260" />
-          <path class="fb-edge fb-edge--tap" d="M300 300 C380 150 420 140 500 140" />
-          <path class="fb-edge fb-edge--tap" d="M300 300 C380 300 420 300 500 300" />
-          <path class="fb-edge fb-edge--tap" d="M300 300 C380 450 420 460 500 460" />
-          <path class="fb-edge fb-edge--scg" d="M540 140 C610 140 640 300 700 300" />
-          <path class="fb-edge fb-edge--scg" d="M540 300 H700" />
-          <path class="fb-edge fb-edge--scg" d="M540 460 C610 460 640 300 700 300" />
-          <path class="fb-edge fb-edge--out" d="M740 300 H880" />
-          <path class="fb-edge fb-edge--chi" d="M110 300 C160 560 520 600 600 560" />
-          <path class="fb-edge fb-edge--chi" d="M640 560 C760 560 880 420 900 330" />
+          <path class="fb-edge" data-s="1" d="M84 300 H150" />
+          <path class="fb-edge" data-s="2" d="M200 300 H266" />
+          <path class="fb-edge fb-edge--control" data-s="2" d="M175 172 C175 230 175 250 175 276" />
+          <path class="fb-edge" data-s="3" d="M314 300 C350 300 360 190 378 190 M314 300 C350 300 360 260 378 260 M314 300 C350 300 360 340 378 340 M314 300 C350 300 360 410 378 410" />
+          <path class="fb-edge" data-s="4" d="M402 190 C440 190 450 300 474 300 M402 260 C440 260 450 300 474 300 M402 340 C440 340 450 300 474 300 M402 410 C440 410 450 300 474 300" />
+          <path class="fb-edge" data-s="5" d="M526 300 L560 270 L596 260 M526 300 L596 300 M526 300 L560 330 L596 340" />
+          <path class="fb-edge fb-edge--pruned" data-s="5" d="M526 300 C560 230 580 210 610 196 M526 300 C560 380 580 400 610 410" />
+          <path class="fb-edge" data-s="6" d="M644 300 C680 300 690 230 712 230 M748 230 C780 230 790 370 802 370 M838 370 C870 370 880 300 902 300" />
+          <path class="fb-edge fb-edge--control" data-s="7" d="M620 360 C620 450 640 500 650 506 M930 328 C930 420 900 490 880 506" />
         </g>
         <g class="fb-nodes">
-          <g class="fb-node" data-node="market"><circle cx="90" cy="300" r="26" /><text x="90" y="350">Marché</text></g>
-          <g class="fb-node" data-node="tap"><circle cx="280" cy="300" r="30" /><text x="280" y="355">Moteur TAP</text></g>
-          <g class="fb-node fb-node--scenario" data-node="tap"><circle cx="520" cy="140" r="18" /><text x="520" y="110">Tendance</text></g>
-          <g class="fb-node fb-node--scenario" data-node="tap"><circle cx="520" cy="300" r="18" /><text x="520" y="270">Retour à la moyenne</text></g>
-          <g class="fb-node fb-node--scenario" data-node="tap"><circle cx="520" cy="460" r="18" /><text x="520" y="505">Couverture</text></g>
-          <g class="fb-node fb-node--gate" data-node="scg"><rect x="696" y="240" width="44" height="120" rx="14" /><text x="718" y="390">SCG</text></g>
-          <g class="fb-node fb-node--shield" data-node="chi2"><path d="M620 520 l26 10 v22 c0 18 -12 30 -26 36 c-14 -6 -26 -18 -26 -36 v-22 z" /><text x="620" y="612">Filtre χ²</text></g>
-          <g class="fb-node fb-node--out" data-node="portfolio"><circle cx="905" cy="300" r="30" /><text x="905" y="355">Portefeuille</text></g>
+          <g class="fb-node" data-s="1"><circle cx="60" cy="300" r="24" /><text x="60" y="348">Marché</text></g>
+          <g class="fb-node fb-node--shield" data-s="2"><path d="M175 274 l24 9 v20 c0 16 -11 27 -24 33 c-13 -6 -24 -17 -24 -33 v-20 z" /><text x="175" y="362">Intégrité χ²</text></g>
+          <g class="fb-node fb-node--macro" data-s="2"><circle cx="175" cy="150" r="22" /><path class="fb-hand" d="M175 150 V134 M175 150 H187" /><text x="175" y="114">Macro Gate</text></g>
+          <g class="fb-node" data-s="3"><circle cx="290" cy="300" r="24" /><text x="290" y="348">Prévision</text></g>
+          <g class="fb-node fb-node--agent" data-s="3"><circle cx="390" cy="190" r="12" /><text x="390" y="168">Trend</text></g>
+          <g class="fb-node fb-node--agent" data-s="3"><circle cx="390" cy="260" r="12" /><text x="390" y="238">Mean-Rev</text></g>
+          <g class="fb-node fb-node--agent" data-s="3"><circle cx="390" cy="340" r="12" /><text x="390" y="318">Macro</text></g>
+          <g class="fb-node fb-node--agent" data-s="3"><circle cx="390" cy="410" r="12" /><text x="390" y="444">Risque</text></g>
+          <g class="fb-node" data-s="4"><circle cx="500" cy="300" r="26" /><text x="500" y="350">TAP</text></g>
+          <g class="fb-node fb-node--gate" data-s="5"><rect x="598" y="240" width="44" height="120" rx="14" /><text x="620" y="226">SCG</text></g>
+          <g class="fb-node" data-s="6"><rect x="712" y="212" width="36" height="36" rx="6" /><text x="730" y="196">Kelly</text></g>
+          <g class="fb-node" data-s="6"><path d="M802 352 L840 370 L802 388 Z" /><text x="820" y="420">Exécution</text></g>
+          <g class="fb-node fb-node--out" data-s="7"><circle cx="930" cy="300" r="28" /><text x="930" y="258">Décision</text></g>
+          <g class="fb-node fb-node--ledger" data-s="7">
+            <rect x="640" y="506" width="26" height="26" rx="4" /><rect x="700" y="506" width="26" height="26" rx="4" />
+            <rect x="760" y="506" width="26" height="26" rx="4" /><rect x="820" y="506" width="26" height="26" rx="4" />
+            <rect x="868" y="506" width="26" height="26" rx="4" />
+            <path class="fb-chain" d="M666 519 H700 M726 519 H760 M786 519 H820 M846 519 H868" />
+            <text x="767" y="570">XAI Ledger</text>
+          </g>
         </g>
       </svg>
       <div class="graph-tooltip" hidden></div>
@@ -154,11 +190,11 @@
         </button>
         <nav id="site-nav" class="site-nav" aria-label="Navigation principale">
           <ul>
-            <li><a href="#principe">Principe</a></li>
             <li><a href="#fonctionnement">Fonctionnement</a></li>
             <li><a href="#demo">Démo</a></li>
-            <li><a href="#avantages">Avantages</a></li>
-            <li><a href="#cas-usage">Cas d'usage</a></li>
+            <li><a href="#resultats">Résultats</a></li>
+            <li><a href="#marches">Marchés</a></li>
+            <li><a href="#offres">Offres</a></li>
             <li><a href="#faq">FAQ</a></li>
           </ul>
           <a class="btn btn-primary btn-small" href="#contact">Demander une démo</a>
@@ -172,22 +208,22 @@
         <div class="container">
           <div class="hero-copy">
             <p class="eyebrow">Gestion des risques &amp; trading algorithmique</p>
-            <h1 id="hero-title">Ne prédisez pas le marché. <span class="accent">Encadrez-le.</span></h1>
+            <h1 id="hero-title">La rentabilité est une conséquence. <span class="accent">La trajectoire admissible est l'objectif.</span></h1>
             <p class="lead">
-              AIOTrade génère un faisceau de trajectoires d'allocation, élimine instantanément tout ordre qui
-              violerait vos limites de drawdown, de VaR ou de marge, et met votre portefeuille en sécurité dès que
-              le marché décroche.
+              AIOTrade n'est pas un bot prédictif magique. C'est une garantie algorithmique neuro-symbolique
+              d'auditabilité et de non-violation du capital : chaque décision est testée sur 1&nbsp;024 trajectoires,
+              élaguée par votre mandat de risque et scellée dans un registre d'audit infalsifiable.
             </p>
             <div class="cta-row">
               <a class="btn btn-primary" href="#contact">Demander une démo</a>
-              <a class="btn btn-ghost" href="#fonctionnement">Voir comment ça marche</a>
+              <a class="btn btn-ghost" href="#fonctionnement">Voir le pipeline</a>
             </div>
             <ul class="hero-proof" aria-label="Chiffres clés mesurés en simulation">
-              <li><strong>0</strong><span>dépassement de la limite de drawdown sur 80 simulations</span></li>
-              <li><strong>÷2</strong><span>drawdown moyen par rapport à un portefeuille équipondéré</span></li>
-              <li><strong>1 pas</strong><span>pour détecter un flash-crash</span></li>
+              <li><strong>0,3&nbsp;%</strong><span>de drawdown maximal sur 12 mois hors échantillon, contre 30,4&nbsp;% sans garde-fou</span></li>
+              <li><strong>1&nbsp;024</strong><span>trajectoires testées avant chaque décision</span></li>
+              <li><strong>1 barre</strong><span>pour geler le portefeuille sur un flash-crash</span></li>
             </ul>
-            <p class="fine-print">Résultats de simulation sur données synthétiques, voir la <a href="#demo">démo</a>.</p>
+            <p class="fine-print">Walk-forward sur données synthétiques, détails et limites dans les <a href="#resultats">résultats</a>.</p>
           </div>
         </div>
       </section>
@@ -197,15 +233,17 @@
         <div class="container">
           <div class="card card-narrow reveal">
             <p class="eyebrow">Le principe</p>
-            <h2 id="principe-title">Un faisceau de trajectoires plutôt qu'une boule de cristal</h2>
+            <h2 id="principe-title">Ne pas deviner le prochain prix : encadrer chaque trajectoire possible</h2>
             <p>
-              La plupart des outils tentent de deviner le prochain mouvement du marché. AIOTrade part du constat
-              inverse : personne ne connaît l'avenir, mais on peut décider <em>sous contraintes</em>.
+              Un modèle qui annonce « le prix montera » ne dit rien de ce que vous risquez en chemin. AIOTrade
+              demande au modèle de prévision non pas un point, mais un faisceau de trajectoires sur l'horizon de
+              décision, puis confronte chaque trajectoire à votre mandat : drawdown, perte par trade, levier, VaR et
+              CVaR, frictions réelles comprises.
             </p>
             <p>
-              À chaque décision, le moteur produit plusieurs allocations possibles et simule pour chacune des
-              centaines de trajectoires. Seules celles qui respectent vos règles de risque sont admissibles.
-              Le cash reste toujours une option : le système n'est jamais acculé.
+              Une position n'est prise que si au moins 75&nbsp;% des trajectoires restent admissibles. Sinon, la
+              taille est divisée par deux, puis le portefeuille reste en cash. Le cash n'est pas un échec : c'est une
+              décision tracée et justifiée.
             </p>
           </div>
         </div>
@@ -216,65 +254,143 @@
         <div class="container">
           <header class="section-head reveal">
             <p class="eyebrow">Fonctionnement</p>
-            <h2 id="fonctionnement-title">Du flux de marché au portefeuille, en cinq étapes</h2>
+            <h2 id="fonctionnement-title">Le pipeline de décision, en sept étapes</h2>
           </header>
           <ol class="steps">
             <li class="step card stage-section" data-stage="1" id="etape-marche">
               <span class="step-index" aria-hidden="true">01</span>
               <h3>Le flux de marché</h3>
               <p>
-                Prix, volumes et spreads de chaque actif alimentent le système en continu. Rien n'est extrapolé :
-                l'historique récent sert de matière première aux simulations.
+                Chandeliers OHLCV, fourchette bid/ask et profondeur du meilleur niveau du carnet arrivent à chaque
+                clôture de barre. Aucune donnée future n'est jamais utilisée : la décision prise à la clôture n'est
+                exécutée que sur la barre suivante.
               </p>
             </li>
-            <li class="step card stage-section" data-stage="2" id="etape-tap">
+            <li class="step card stage-section" data-stage="2" id="etape-integrite">
               <span class="step-index" aria-hidden="true">02</span>
-              <h3>Le moteur TAP génère les scénarios</h3>
+              <h3>Filtre d'intégrité χ² et Macro Gate</h3>
               <p>
-                Trois allocations concurrentes sont construites : <strong>tendance</strong> (suivre le momentum),
-                <strong>retour à la moyenne</strong> (jouer les excès) et <strong>couverture</strong> (minimiser la
-                variance). Chacune est projetée sur 256 trajectoires par bootstrap de l'historique.
+                Le vecteur rendement, spread, profondeur et volume est comparé à sa référence par la distance de
+                Mahalanobis <em>d²</em>, qui suit une loi du χ² à 4 degrés de liberté (seuil de 13,28 à 1&nbsp;%,
+                recalibré sur 12 mois pour les queues épaisses). Un flux anormal, flash-crash, spoofing ou
+                décrochage de liquidité, gèle le portefeuille en cash.
+              </p>
+              <p>
+                Le Macro Gate applique un veto calendaire déterministe autour des annonces NFP, IPC, Fed et BCE :
+                exposition réduite de moitié de 45 à 15 minutes avant, puis aucune position de 15 minutes avant à
+                10 minutes après.
               </p>
             </li>
-            <li class="step card stage-section" data-stage="3" id="etape-scg">
+            <li class="step card stage-section" data-stage="3" id="etape-prevision">
               <span class="step-index" aria-hidden="true">03</span>
-              <h3>Le garde-fou SCG filtre les ordres</h3>
+              <h3>Prévision : un essaim d'agents, pas un oracle</h3>
               <p>
-                Avant toute exécution, chaque allocation est confrontée à trois contraintes dures : drawdown maximal
-                autorisé, budget de Value-at-Risk et marge disponible. Une seule violation suffit : l'ordre est
-                éliminé, sans négociation avec le rendement espéré.
+                Quatre agents (Trend, Mean-Reversion, Macro, Risque) proposent chacun une dérive et une volatilité.
+                Leurs poids se réajustent en ligne selon le régime de volatilité, sans réentraînement. Le modèle de
+                fondation Kronos peut les remplacer, avec échantillonnage nucleus (température&nbsp;T, top_p).
               </p>
             </li>
-            <li class="step card stage-section" data-stage="4" id="etape-chi2">
+            <li class="step card stage-section" data-stage="4" id="etape-tap">
               <span class="step-index" aria-hidden="true">04</span>
-              <h3>Le filtre χ² met le portefeuille en sécurité</h3>
+              <h3>TAP : le faisceau de trajectoires</h3>
               <p>
-                Un test du χ² compare en permanence la distribution récente des rendements, volumes et spreads à
-                celle du marché de référence. En cas de rupture (décrochage de liquidité, manipulation,
-                flash-crash), les positions sont ramenées en cash immédiatement.
+                Trajectory Admissible Planning : 1&nbsp;024 trajectoires de rendements multi-pas sont simulées sur
+                l'horizon de décision (12 barres), en rééchantillonnant les chocs réellement observés. Le stop loss
+                est déduit de l'excursion défavorable du faisceau.
               </p>
             </li>
-            <li class="step card stage-section" data-stage="5" id="etape-portefeuille">
+            <li class="step card stage-section" data-stage="5" id="etape-scg">
               <span class="step-index" aria-hidden="true">05</span>
-              <h3>Un portefeuille piloté et auditable</h3>
+              <h3>SCG : l'élagage sous mandat</h3>
               <p>
-                Parmi les scénarios admissibles, le meilleur couple rendement / risque est retenu. Chaque décision,
-                chaque rejet et chaque mise en sécurité est journalisé avec sa justification chiffrée.
+                Le Spherical Constraint Graph projette chaque trajectoire en courbe d'équité
+                <em>E = 1 + w·R − frictions</em> et la rejette si elle viole le drawdown du compte, la perte maximale
+                par trade, le levier, ou les budgets de VaR et de CVaR. La décision n'est admise que si au moins
+                75&nbsp;% des trajectoires survivent.
+              </p>
+            </li>
+            <li class="step card stage-section" data-stage="6" id="etape-execution">
+              <span class="step-index" aria-hidden="true">06</span>
+              <h3>Kelly fractionnaire et exécution</h3>
+              <p>
+                La taille suit <em>f* = λ·(p·b − (1 − p)) / b</em> avec λ = 0,20, en prenant pour <em>p</em> la borne
+                basse de confiance mesurée sur le faisceau, puis elle est plafonnée à 1&nbsp;% de perte par trade et
+                1,5× de levier. Le coût d'impact suit le modèle d'Almgren-Chriss <em>γ·σ·(Q/V)<sup>α</sup></em> ;
+                les entrées partent en ordres limites passifs (maker), les sorties de risque au marché (taker).
+              </p>
+            </li>
+            <li class="step card stage-section" data-stage="7" id="etape-decision">
+              <span class="step-index" aria-hidden="true">07</span>
+              <h3>Décision et registre XAI</h3>
+              <p>
+                LONG, SHORT ou CASH part vers le courtier. Chaque décision, y compris chaque refus, devient un
+                enregistrement JSON chaîné par SHA-256 au précédent : modifier, supprimer ou réordonner une ligne
+                casse la chaîne.
               </p>
             </li>
           </ol>
         </div>
       </section>
 
-      <!-- 4. Démo interactive -->
+      <!-- 4. Registre XAI -->
+      <section class="section section-solid" id="registre" aria-labelledby="registre-title">
+        <div class="container ledger-grid">
+          <div class="reveal">
+            <p class="eyebrow">Explicabilité</p>
+            <h2 id="registre-title">Un registre d'audit que personne ne peut réécrire</h2>
+            <p class="section-lead">
+              Pour un risk manager ou un régulateur, la question n'est pas « combien a-t-on gagné ? » mais
+              « pourquoi cet ordre est-il parti ? ». Chaque ligne du XAI Ledger répond avec des chiffres.
+            </p>
+            <ul class="checklist">
+              <li>Distance d² et seuil du filtre d'intégrité au moment de la décision</li>
+              <li>Trajectoires testées et rejets du SCG, contrainte par contrainte</li>
+              <li>Ratio d'admissibilité, allocation retenue et stop loss posé</li>
+              <li>Empreinte SHA-256 de la ligne précédente : toute falsification est détectée</li>
+            </ul>
+          </div>
+          <figure class="card ledger-card reveal">
+            <figcaption>Enregistrement réel produit par le backtest (extrait)</figcaption>
+            <pre class="code" tabindex="0"><code>{
+  "timestamp_utc": "2026-04-03T20:00:00.000Z",
+  "market_integrity_d2": 2.62,
+  "chi2_threshold": 20.5,
+  "status": "NOMINAL",
+  "macro_gate": "NOMINAL",
+  "tap_trajectories_tested": 1024,
+  "scg_rejections": {
+    "leverage_violation": 0,
+    "drawdown_violation": 0,
+    "loss_violation": 0,
+    "cvar_violation": 0,
+    "var_violation": 22
+  },
+  "admissibility_ratio": 0.9785,
+  "selected_allocation": -0.7428,
+  "decision": "SHORT",
+  "active_constraints": [
+    "MAX_LEVERAGE_1.5X",
+    "MAX_LOSS_PER_TRADE_1PCT",
+    "STOP_LOSS_1.08009"
+  ],
+  "prev_hash": "ca892fa5…77c01",
+  "hash": "154bbf77…1818b"
+}</code></pre>
+          </figure>
+        </div>
+      </section>
+
+      <!-- 5. Démo interactive -->
       <section class="section section-solid" id="demo" aria-labelledby="demo-title">
         <div class="container">
           <header class="section-head reveal">
             <p class="eyebrow">Démo en direct</p>
-            <h2 id="demo-title">Lancez un choc de marché et regardez AIOTrade réagir</h2>
+            <h2 id="demo-title">Injectez un choc et comparez les quatre stratégies</h2>
             <p class="section-lead">
-              Simulation sur données synthétiques calculée par l'API AIOTrade. Comparez le portefeuille piloté à un
-              portefeuille équipondéré sans garde-fou.
+              L'API AIOTrade calibre le pipeline sur 12 mois de marché synthétique, puis rejoue une semaine hors
+              échantillon avec le choc choisi. Les quatre bras du protocole sont comparés, frais compris. Quand
+              aucun avantage net de frais ne survit au faisceau, AIOTrade reste en cash : sa courbe est plate, et
+              chaque refus est malgré tout scellé dans le registre.
             </p>
           </header>
           <form class="demo-controls card" id="demo-form">
@@ -283,13 +399,17 @@
               <select id="demo-shock" name="shock">
                 <option value="flash_crash" selected>Flash-crash</option>
                 <option value="liquidity_drop">Décrochage de liquidité</option>
-                <option value="manipulation">Manipulation (pump &amp; dump)</option>
+                <option value="spoofing">Spoofing (ordres fantômes)</option>
                 <option value="none">Marché sans choc</option>
               </select>
             </div>
             <div class="field">
-              <label for="demo-dd">Drawdown maximal autorisé : <output id="demo-dd-out" for="demo-dd">10&nbsp;%</output></label>
-              <input id="demo-dd" name="max_drawdown" type="range" min="5" max="20" step="1" value="10" />
+              <label for="demo-lev">Levier maximal : <output id="demo-lev-out" for="demo-lev">1,5×</output></label>
+              <input id="demo-lev" name="max_leverage" type="range" min="0.5" max="3" step="0.5" value="1.5" />
+            </div>
+            <div class="field">
+              <label for="demo-adm">Seuil d'admissibilité : <output id="demo-adm-out" for="demo-adm">75&nbsp;%</output></label>
+              <input id="demo-adm" name="min_admissibility" type="range" min="50" max="95" step="5" value="75" />
             </div>
             <div class="field">
               <label for="demo-seed">Graine aléatoire</label>
@@ -299,31 +419,154 @@
           </form>
           <div class="demo-output">
             <figure class="card chart-card">
-              <canvas id="demo-chart" class="demo-chart" width="960" height="420" role="img" aria-label="Graphique de la simulation, en attente de calcul."></canvas>
+              <canvas id="demo-chart" class="demo-chart" width="960" height="520" role="img" aria-label="Graphique de la simulation, en attente de calcul."></canvas>
               <figcaption class="chart-legend">
-                <span class="legend legend-aiotrade">AIOTrade</span>
-                <span class="legend legend-benchmark">Équipondéré sans garde-fou</span>
-                <span class="legend legend-safe">Mode sécurité (χ²)</span>
+                <span class="legend legend-d">D · AIOTrade complet</span>
+                <span class="legend legend-b">B · Prédictif non contraint</span>
+                <span class="legend legend-a">A · Momentum</span>
+                <span class="legend legend-c">C · TAP sans SCG</span>
+                <span class="legend legend-safe">Gel d'intégrité</span>
+                <span class="legend legend-macro">Blackout macro</span>
               </figcaption>
             </figure>
             <div class="card demo-kpis">
-              <h3>Résultats</h3>
+              <h3>Résultats sur la semaine</h3>
+              <div class="table-scroll">
+                <table class="kpi-table" id="demo-table">
+                  <caption class="visually-hidden">Performance, drawdown maximal et transactions des quatre bras</caption>
+                  <thead>
+                    <tr><th scope="col">Bras</th><th scope="col">Perf. nette</th><th scope="col"><abbr title="Drawdown maximal">DD max</abbr></th><th scope="col">Trades</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><th scope="row">D · AIOTrade</th><td>–</td><td>–</td><td>–</td></tr>
+                    <tr><th scope="row">B · Prédictif</th><td>–</td><td>–</td><td>–</td></tr>
+                    <tr><th scope="row">A · Momentum</th><td>–</td><td>–</td><td>–</td></tr>
+                    <tr><th scope="row">C · TAP seul</th><td>–</td><td>–</td><td>–</td></tr>
+                  </tbody>
+                </table>
+              </div>
               <dl id="demo-kpis" class="kpis">
-                <div><dt>Drawdown max AIOTrade</dt><dd>–</dd></div>
-                <div><dt>Drawdown max équipondéré</dt><dd>–</dd></div>
-                <div><dt>Performance AIOTrade</dt><dd>–</dd></div>
-                <div><dt>Allocations rejetées par SCG</dt><dd>–</dd></div>
-                <div><dt>Mises en sécurité χ²</dt><dd>–</dd></div>
+                <div><dt>Barres gelées par le filtre χ²</dt><dd>–</dd></div>
+                <div><dt>Décisions d'AIOTrade (bras D)</dt><dd>–</dd></div>
+                <div><dt>Registre XAI</dt><dd>–</dd></div>
               </dl>
-              <h3>Journal d'audit</h3>
-              <ul id="demo-events" class="events"><li>Lancez une simulation pour voir les décisions.</li></ul>
             </div>
           </div>
+          <details class="card ledger-live">
+            <summary>Dernier enregistrement du registre XAI</summary>
+            <pre class="code" tabindex="0"><code id="demo-record">Lancez une simulation pour afficher l'enregistrement.</code></pre>
+          </details>
           <p id="demo-status" class="demo-status" role="status" aria-live="polite"></p>
         </div>
       </section>
 
-      <!-- 5. Avantages -->
+      <!-- 6. Résultats : protocole walk-forward -->
+      <section class="section section-solid" id="resultats" aria-labelledby="resultats-title">
+        <div class="container">
+          <header class="section-head reveal">
+            <p class="eyebrow">Protocole expérimental</p>
+            <h2 id="resultats-title">Résultats mesurés, objectifs affichés, limites assumées</h2>
+            <p class="section-lead">
+              Walk-forward glissant : calibrage sur 12 mois, test sur les 3 mois suivants, quatre fois, soit 12 mois
+              hors échantillon en barres de 15 minutes. Les quatre bras paient les mêmes frictions : spread, slippage,
+              impact Almgren-Chriss et commissions.
+            </p>
+          </header>
+          <div class="grid grid-2 results-grid">
+            <div class="card reveal">
+              <h3>Les quatre bras sur 12 mois hors échantillon</h3>
+              <div class="table-scroll">
+                <table class="data-table">
+                  <caption class="visually-hidden">Performance nette, drawdown maximal, Sortino et Calmar des quatre bras</caption>
+                  <thead>
+                    <tr><th scope="col">Bras</th><th scope="col">Perf. nette</th><th scope="col">Drawdown max</th><th scope="col">Sortino</th><th scope="col">Calmar</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><th scope="row">A · Momentum classique</th><td>−22,9&nbsp;%</td><td>26,1&nbsp;%</td><td>−4,14</td><td>−0,88</td></tr>
+                    <tr><th scope="row">B · Prédictif non contraint</th><td>−27,6&nbsp;%</td><td>30,4&nbsp;%</td><td>−3,43</td><td>−0,91</td></tr>
+                    <tr><th scope="row">C · TAP sans SCG</th><td>−39,0&nbsp;%</td><td>40,2&nbsp;%</td><td>−9,06</td><td>−0,97</td></tr>
+                    <tr class="row-highlight"><th scope="row">D · AIOTrade complet</th><td>+0,1&nbsp;%</td><td>0,3&nbsp;%</td><td>0,22</td><td>0,15</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="fine-print">Graine 11. Sur les graines 12 et 13, le drawdown de D reste entre 0,1 et 0,2&nbsp;% ; celui de B va de 8,8 à 21,6&nbsp;%, et sa performance de −9,1 à +21,9&nbsp;%.</p>
+            </div>
+            <div class="card reveal">
+              <h3>Objectifs du protocole</h3>
+              <div class="table-scroll">
+                <table class="data-table">
+                  <caption class="visually-hidden">Objectifs de succès, valeur mesurée et statut</caption>
+                  <thead>
+                    <tr><th scope="col">Critère</th><th scope="col">Objectif</th><th scope="col">Mesuré</th><th scope="col">Statut</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><th scope="row">Réduction du drawdown max vs B</th><td>≥&nbsp;40&nbsp;%</td><td>99,0&nbsp;%</td><td><span class="status status-ok">Atteint</span></td></tr>
+                    <tr><th scope="row">Sortino net</th><td>&gt;&nbsp;2,0</td><td>0,22</td><td><span class="status status-ko">Non atteint</span></td></tr>
+                    <tr><th scope="row">Calmar net</th><td>&gt;&nbsp;1,5</td><td>0,15</td><td><span class="status status-ko">Non atteint</span></td></tr>
+                    <tr><th scope="row">Taux d'élagage du SCG</th><td>15 à 45&nbsp;%</td><td>5,8&nbsp;%</td><td><span class="status status-ko">Non atteint</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="card card-narrow honest reveal">
+            <h3>Ce que ces chiffres disent, et ce qu'ils ne disent pas</h3>
+            <p>
+              Le marché synthétique ne contient presque aucun avantage exploitable une fois les frais payés à
+              l'horizon de 3 heures. Les trois bras sans garde-fou complet perdent donc entre 23 et 39&nbsp;% sur
+              l'année. AIOTrade le détecte : le Kelly prudent reste nul et le portefeuille demeure en cash 99,7&nbsp;%
+              du temps. Le capital est préservé, mais la réduction du drawdown vient surtout de cette abstention.
+            </p>
+            <p>
+              Les objectifs de Sortino et de Calmar ne peuvent pas être atteints sans avantage à capter : ils
+              doivent être mesurés sur données réelles, avec votre propre signal. Le rapport complet est servi par
+              l'API (<code>/api/benchmark</code>) et se régénère avec <code>python -m aiotrade benchmark</code>.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. Marchés -->
+      <section class="section section-solid" id="marches" aria-labelledby="marches-title">
+        <div class="container">
+          <header class="section-head reveal">
+            <p class="eyebrow">Compatibilité des marchés</p>
+            <h2 id="marches-title">Où AIOTrade a du sens, et où il n'en a pas</h2>
+          </header>
+          <div class="table-scroll reveal">
+            <table class="data-table markets-table">
+              <caption class="visually-hidden">Compatibilité d'AIOTrade selon le marché, avec justification</caption>
+              <thead>
+                <tr><th scope="col">Marché</th><th scope="col">Compatibilité</th><th scope="col">Pourquoi</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Scalping futures et CFD régulés</th>
+                  <td><span class="status status-ok">Optimale · choix n°1</span></td>
+                  <td>Liquidité profonde, coûts faibles et connus, levier encadré, données de carnet exploitables par le filtre d'intégrité : toutes les contraintes du SCG sont mesurables.</td>
+                </tr>
+                <tr>
+                  <th scope="row">Options vanilles</th>
+                  <td><span class="status status-good">Très bonne · choix n°2</span></td>
+                  <td>Profil de gain convexe et perte maximale connue à l'achat : le mandat se traduit directement en contraintes de trajectoire.</td>
+                </tr>
+                <tr>
+                  <th scope="row">Prediction markets</th>
+                  <td><span class="status status-ko">Incompatible</span></td>
+                  <td>Gains binaires sans trajectoire de prix continue, liquidité faible : il n'y a pas de faisceau à élaguer.</td>
+                </tr>
+                <tr>
+                  <th scope="row">Memecoins</th>
+                  <td><span class="status status-ko">Inadapté</span></td>
+                  <td>Manipulation, liquidité fantôme et queues extrêmes : le filtre d'intégrité resterait gelé en permanence.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. Avantages -->
       <section class="section section-solid" id="avantages" aria-labelledby="avantages-title">
         <div class="container">
           <header class="section-head reveal">
@@ -332,69 +575,100 @@
           </header>
           <ul class="grid grid-3">
             <li class="card feature reveal">
-              <h3>Des limites qui tiennent vraiment</h3>
-              <p>Drawdown, VaR et marge sont vérifiés avant chaque ordre, pas constatés après coup dans un reporting.</p>
+              <h3>Un mandat qui tient vraiment</h3>
+              <p>Drawdown, perte par trade, levier, VaR et CVaR sont vérifiés sur 1&nbsp;024 trajectoires avant l'ordre, pas constatés après coup.</p>
             </li>
             <li class="card feature reveal">
-              <h3>Une réaction en un pas</h3>
-              <p>Le filtre χ² détecte les ruptures de liquidité et les flash-crashes et coupe l'exposition sans attendre une validation manuelle.</p>
+              <h3>Une réaction en une barre</h3>
+              <p>Le filtre d'intégrité gèle le portefeuille dès la première barre d'un flash-crash ; le Macro Gate sort avant les annonces.</p>
             </li>
             <li class="card feature reveal">
-              <h3>Aucun pari sur une prévision</h3>
-              <p>Plusieurs scénarios sont évalués sur des centaines de trajectoires : la robustesse prime sur le pronostic.</p>
+              <h3>Votre signal, notre garde-fou</h3>
+              <p>Essaim d'agents, Kronos ou votre propre modèle : n'importe quel générateur de trajectoires se branche devant le SCG.</p>
             </li>
             <li class="card feature reveal">
-              <h3>Chaque décision est justifiée</h3>
-              <p>Le journal d'audit trace scénario retenu, rejets et seuils dépassés : un support direct pour la conformité.</p>
+              <h3>Chaque décision est prouvable</h3>
+              <p>Le registre XAI chaîné SHA-256 se vérifie en une commande ou par l'API : un support direct pour la conformité.</p>
             </li>
             <li class="card feature reveal">
-              <h3>Vos paramètres, vos règles</h3>
-              <p>Limites de risque, taux de marge et sensibilité du filtre se règlent par desk, par stratégie ou par compte.</p>
+              <h3>Des frais réalistes</h3>
+              <p>Impact Almgren-Chriss, spread, slippage et commissions sont intégrés au calcul de taille et aux contraintes.</p>
             </li>
             <li class="card feature reveal">
               <h3>Déployé chez vous</h3>
-              <p>Conteneurs Docker sur votre infrastructure : vos positions et vos données ne quittent pas votre périmètre.</p>
+              <p>Conteneurs Docker sur votre infrastructure ; papier par défaut, testnet, puis réel uniquement sur votre décision.</p>
             </li>
           </ul>
         </div>
       </section>
 
-      <!-- 6. Cas d'usage -->
+      <!-- 9. Pour qui -->
       <section class="section section-solid" id="cas-usage" aria-labelledby="cas-title">
         <div class="container">
           <header class="section-head reveal">
-            <p class="eyebrow">Cas d'usage</p>
-            <h2 id="cas-title">Conformité, surveillance et co-pilotage</h2>
+            <p class="eyebrow">Pour qui</p>
+            <h2 id="cas-title">Une solution B2B pour ceux dont le risque est contrôlé</h2>
           </header>
           <div class="grid grid-3">
             <article class="card usecase reveal">
               <h3>Desks de prop trading</h3>
-              <p>Encadrez chaque trader et chaque stratégie avec des limites appliquées automatiquement, avant l'envoi de l'ordre.</p>
+              <p>Appliquez le même mandat à chaque trader et chaque stratégie, avant l'envoi de l'ordre, avec une piste d'audit par décision.</p>
             </article>
             <article class="card usecase reveal">
-              <h3>Gérants de portefeuille</h3>
-              <p>Comparez vos allocations à des alternatives robustes et respectez le profil de risque promis à vos clients.</p>
+              <h3>Hedge funds quantitatifs</h3>
+              <p>Placez le SCG derrière vos propres modèles : vos signaux restent les vôtres, la non-violation du capital devient vérifiable.</p>
             </article>
             <article class="card usecase reveal">
-              <h3>Risk managers &amp; conformité</h3>
-              <p>Surveillez en continu, documentez chaque dépassement évité et disposez d'une piste d'audit exploitable.</p>
+              <h3>Traders en challenge prop-firm</h3>
+              <p>Drawdown journalier et maximal imposés par le challenge deviennent des contraintes dures : un ordre qui les mettrait en danger ne part pas.</p>
             </article>
           </div>
         </div>
       </section>
 
-      <!-- 7. Preuves et témoignages -->
+      <!-- 10. Offres -->
+      <section class="section section-solid" id="offres" aria-labelledby="offres-title">
+        <div class="container">
+          <header class="section-head reveal">
+            <p class="eyebrow">Offres</p>
+            <h2 id="offres-title">Trois façons de travailler avec AIOTrade</h2>
+          </header>
+          <ul class="grid grid-3 offers">
+            <li class="card offer reveal">
+              <h3>SaaS par trader</h3>
+              <p class="price"><strong>50 à 200&nbsp;€</strong><span> par mois et par trader</span></p>
+              <p>Co-pilote hébergé, mandat paramétrable, registre XAI consultable, alertes de gel et de veto macro.</p>
+              <a class="btn btn-ghost" href="#contact">Essayer</a>
+            </li>
+            <li class="card offer offer-featured reveal">
+              <h3>Licence API / FIX</h3>
+              <p class="price"><strong>5&nbsp;000 à 15&nbsp;000&nbsp;€</strong><span> par an et par desk</span></p>
+              <p>Le moteur sur votre infrastructure, branché sur votre OMS : contrôle pré-trade, registre d'audit et support.</p>
+              <a class="btn btn-primary" href="#contact">Demander une démo</a>
+            </li>
+            <li class="card offer reveal">
+              <h3>Acquisition de la technologie</h3>
+              <p class="price"><strong>Sur étude</strong><span> cession ou licence exclusive</span></p>
+              <p>Pour les acteurs qui veulent internaliser le pipeline complet et sa propriété intellectuelle.</p>
+              <a class="btn btn-ghost" href="#contact">Nous contacter</a>
+            </li>
+          </ul>
+          <p class="fine-print">Prix indicatifs hors taxes, ajustés selon le nombre de comptes et le périmètre d'intégration.</p>
+        </div>
+      </section>
+
+      <!-- 11. Preuves et témoignages -->
       <section class="section section-solid" id="preuves" aria-labelledby="preuves-title">
         <div class="container">
           <header class="section-head reveal">
             <p class="eyebrow">Indicateurs de confiance</p>
-            <h2 id="preuves-title">Des résultats mesurés, pas promis</h2>
+            <h2 id="preuves-title">Vérifiable plutôt que promis</h2>
           </header>
           <ul class="grid grid-4 trust">
-            <li class="card reveal"><strong data-count="80">80</strong><span>simulations de validation (4 types de marché)</span></li>
-            <li class="card reveal"><strong data-count="0">0</strong><span>dépassement de la limite de drawdown de 10 %</span></li>
-            <li class="card reveal"><strong data-count="45">45</strong><span>tests automatisés du moteur et de l'API</span></li>
-            <li class="card reveal"><strong data-count="100" data-suffix=" %">100 %</strong><span>des décisions journalisées pour l'audit</span></li>
+            <li class="card reveal"><strong data-count="0">0</strong><span>dépassement du mandat de drawdown de 10&nbsp;% sur 36 mois hors échantillon (3 graines)</span></li>
+            <li class="card reveal"><strong data-count="1024">1&#8239;024</strong><span>trajectoires testées par décision</span></li>
+            <li class="card reveal"><strong data-count="112">112</strong><span>tests automatisés, dont un faux serveur Binance</span></li>
+            <li class="card reveal"><strong data-count="100" data-suffix="&nbsp;%">100&nbsp;%</strong><span>des décisions, refus compris, dans le registre chaîné</span></li>
           </ul>
           <div class="grid grid-2 testimonials">
             <figure class="card testimonial reveal">
@@ -407,7 +681,7 @@
             <figure class="card testimonial reveal">
               <p class="tag">Emplacement témoignage</p>
               <blockquote>
-                <p>Cet espace accueillera le retour d'un gérant de portefeuille sur l'usage du co-pilote au quotidien.</p>
+                <p>Cet espace accueillera le retour d'un trader en challenge prop-firm sur l'usage du co-pilote.</p>
               </blockquote>
               <figcaption>Nom, fonction, société (à compléter avec un témoignage réel et autorisé)</figcaption>
             </figure>
@@ -415,7 +689,7 @@
         </div>
       </section>
 
-      <!-- 8. FAQ -->
+      <!-- 12. FAQ -->
       <section class="section section-solid" id="faq" aria-labelledby="faq-title">
         <div class="container container-narrow">
           <header class="section-head reveal">
@@ -424,39 +698,47 @@
           </header>
           <div class="faq">
             <details class="card">
-              <summary>AIOTrade prédit-il les prix ?</summary>
-              <p>Non. AIOTrade génère plusieurs trajectoires d'allocation possibles et ne retient que celles qui respectent vos contraintes de risque. Il encadre la décision au lieu de parier sur une prévision.</p>
+              <summary>AIOTrade est-il un bot qui prédit les prix ?</summary>
+              <p>Non. La prévision n'est qu'une entrée : AIOTrade génère un faisceau de trajectoires, élimine celles qui violeraient votre mandat de risque et ne s'expose que si au moins 75&nbsp;% des trajectoires restent admissibles. Sinon, il reste en cash.</p>
             </details>
             <details class="card">
               <summary>AIOTrade passe-t-il des ordres réels ?</summary>
-              <p>Non, la version actuelle fonctionne en simulation et en co-pilotage : elle vérifie et propose, la décision d'exécution reste humaine ou relève de votre infrastructure.</p>
+              <p>Par défaut, non : mode papier sur données publiques, puis Binance Spot testnet. Le passage en réel n'est possible que sur votre infrastructure, avec des clés dédiées (trading seul, retraits désactivés), un double verrou explicite et un plafond par ordre.</p>
             </details>
             <details class="card">
-              <summary>Comment se déploie AIOTrade ?</summary>
-              <p>Par conteneurs Docker : une commande <code>docker compose up</code> démarre l'API et l'interface, sur votre propre infrastructure.</p>
+              <summary>Quels résultats AIOTrade obtient-il ?</summary>
+              <p>Sur un walk-forward de 12 mois hors échantillon en données synthétiques, AIOTrade a limité son drawdown maximal à 0,3&nbsp;% contre 30,4&nbsp;% pour une stratégie prédictive non contrainte, en restant en cash l'essentiel du temps faute d'avantage net de frais. Les objectifs de Sortino et de Calmar ne sont pas atteints sur ces données et doivent être mesurés sur données réelles.</p>
             </details>
             <details class="card">
-              <summary>Le filtre χ² ne risque-t-il pas de couper trop souvent ?</summary>
-              <p>Le seuil est calibré par Monte-Carlo pour un taux de fausses alertes d'environ 0,1 % par pas en marché calme, et le mode sécurité se lève automatiquement après une période de retour à la normale.</p>
+              <summary>Que contient le registre XAI ?</summary>
+              <p>Un enregistrement JSON par décision : distance d² et seuil χ², état du Macro Gate, nombre de trajectoires testées, rejets du SCG par contrainte, ratio d'admissibilité, allocation retenue, contraintes actives et empreinte SHA-256 de l'enregistrement précédent.</p>
+            </details>
+            <details class="card">
+              <summary>Et la connexion à XTB ?</summary>
+              <p>XTB a fermé son API xAPI le 14 mars 2025. AIOTrade passe par une interface courtier unique : Binance Spot (testnet) est fourni, et un autre courtier se branche sans toucher au pipeline de décision.</p>
+            </details>
+            <details class="card">
+              <summary>Puis-je utiliser Kronos ou mon propre modèle ?</summary>
+              <p>Oui. Tout modèle capable de produire des trajectoires de rendements se branche devant le TAP. L'adaptateur Kronos (échantillonnage nucleus, température et top_p réglables) est fourni en option ; l'image par défaut reste légère et hors ligne.</p>
             </details>
           </div>
         </div>
       </section>
 
-      <!-- 9. Contact + lead magnet -->
+      <!-- 13. Contact + lead magnet -->
       <section class="section section-solid" id="contact" aria-labelledby="contact-title">
         <div class="container contact-grid">
           <div class="reveal">
             <p class="eyebrow">Passons à l'action</p>
             <h2 id="contact-title">Demandez une démo ou la fiche technique</h2>
             <p class="section-lead">
-              Une démonstration de 30 minutes sur vos propres limites de risque, ou la fiche technique détaillée du
-              moteur TAP, du garde-fou SCG et du filtre χ².
+              Une démonstration de 30 minutes sur votre propre mandat de risque, ou la fiche technique détaillée du
+              pipeline : filtre d'intégrité, Macro Gate, TAP, SCG, Kelly fractionnaire et registre XAI.
             </p>
             <ul class="checklist">
-              <li>Paramétrage sur vos limites de drawdown, VaR et marge</li>
-              <li>Rejeu de scénarios de crise</li>
-              <li>Déploiement sur votre infrastructure</li>
+              <li>Paramétrage sur votre mandat : drawdown, perte par trade, levier, VaR et CVaR</li>
+              <li>Rejeu de scénarios de crise et vérification du registre XAI</li>
+              <li>Déploiement sur votre infrastructure, papier puis testnet</li>
             </ul>
           </div>
           <form class="card contact-form" id="contact-form" novalidate>
@@ -513,7 +795,8 @@
         <p class="disclaimer">
           AIOTrade est un outil d'aide à la décision et de contrôle des risques. Il ne constitue ni un conseil en
           investissement ni une incitation à investir. Les résultats présentés sont issus de simulations sur données
-          synthétiques et ne préjugent pas des performances futures. Le trading comporte un risque de perte en capital.
+          synthétiques et ne préjugent pas des performances futures. Le trading, en particulier avec effet de levier,
+          comporte un risque de perte en capital.
         </p>
       </div>
     </footer>
