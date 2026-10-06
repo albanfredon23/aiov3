@@ -17,6 +17,11 @@ import numpy as np
 from .stats import historical_var, portfolio_returns
 
 
+def _pct(value: float) -> str:
+    """Pourcentage au format français : 0.1655 -> « 16,55 % »."""
+    return f"{value * 100:.2f}\u00a0%".replace(".", ",")
+
+
 @dataclass(frozen=True)
 class RiskLimits:
     max_drawdown: float = 0.10
@@ -105,12 +110,12 @@ class SCGGuard:
                     "max_drawdown",
                     projected_dd,
                     lim.max_drawdown,
-                    f"Drawdown projeté {projected_dd:.2%} > limite {lim.max_drawdown:.2%}",
+                    f"Drawdown projeté {_pct(projected_dd)} > limite {_pct(lim.max_drawdown)}",
                 )
             )
         if var > lim.var_budget:
             violations.append(
-                Violation("var_budget", var, lim.var_budget, f"VaR {var:.2%} > budget {lim.var_budget:.2%}")
+                Violation("var_budget", var, lim.var_budget, f"VaR {_pct(var)} > budget {_pct(lim.var_budget)}")
             )
         if margin_usage > lim.max_margin_usage:
             violations.append(
@@ -118,7 +123,7 @@ class SCGGuard:
                     "margin",
                     margin_usage,
                     lim.max_margin_usage,
-                    f"Marge requise {margin_usage:.2%} > disponible {lim.max_margin_usage:.2%}",
+                    f"Marge requise {_pct(margin_usage)} > disponible {_pct(lim.max_margin_usage)}",
                 )
             )
         return GuardDecision(

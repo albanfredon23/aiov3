@@ -1,0 +1,59 @@
+name: AIOTrade
+
+on:
+  push:
+    paths: ["aiotrade/**", ".github/workflows/aiotrade.yml"]
+  pull_request:
+    paths: ["aiotrade/**", ".github/workflows/aiotrade.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aiotrade/engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pytest
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aiotrade/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: aiotrade/web/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: [engine, web]
+    defaults:
+      run:
+        working-directory: aiotrade
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tests dans le conteneur
+        run: docker build --target test engine
+      - name: Build et démarrage de la stack
+        run: |
+          docker compose up -d --build --wait
+          curl -fsS http://localhost:8088/api/health
+          curl -fsS -o /dev/null http://localhost:8088/
+          curl -fsS -X POST http://localhost:8088/api/simulate -H 'Content-Type: application/json' -d '{"steps": 300}' > /dev/null
+      - name: Arrêt
+        if: always()
+        run: docker compose down
