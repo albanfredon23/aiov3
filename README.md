@@ -204,3 +204,11 @@ Alban Fredon
 AI / Python / Agent Runtime Engineering
 GitHub: https://github.com/albanfredon23
 
+
+---
+
+## AIOTrade (gestion des risques et trading algorithmique)
+
+Le dossier [`aiotrade/`](aiotrade/README.md) contient un projet autonome : moteur de scénarios TAP, garde-fou
+financier SCG, filtre χ² de rupture de marché, API FastAPI et site vitrine 3D. Démarrage :
+`cd aiotrade && docker compose up --build`, puis <http://localhost:8088>.
